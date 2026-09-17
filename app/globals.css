@@ -1,0 +1,2295 @@
+/* ==========================================================================
+   BEADIZO — CRAFTED WITH LOVE
+   Aesthetic Luxury D2C Jewellery Theme
+   Color Scheme: Soft Warm Cream, Obsidian Black & Dusty Blush Pink
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Caveat:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Core Colors */
+  --bg-cream: #FAF8F5;
+  --bg-white: #FFFFFF;
+  --bg-dark: #0A0A0C;
+  --bg-card: #FFFFFF;
+
+  --color-blush: #DFBDB5;
+  --color-blush-light: #F7EBE8;
+  --color-blush-hover: #D5ABA2;
+  --color-gold: #C5A059;
+
+  --text-dark: #1F1F24;
+  --text-muted: #72727D;
+  --text-light: #FFFFFF;
+  --text-subtle: #9898A4;
+
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-dark: rgba(255, 255, 255, 0.1);
+  --border-blush: #E8D2CC;
+
+  /* Typography */
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-script: 'Caveat', cursive;
+  /* Used ONLY for subtle handwritten doodle watermarks */
+
+  /* Shadows & Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.04);
+  --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.08);
+
+  /* Transitions */
+  --transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ==========================================================================
+   LUCIDE ICON SYSTEM (Consistent Vector Styling)
+   ========================================================================== */
+.lucide-icon {
+  display: inline-block;
+  vertical-align: middle;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  flex-shrink: 0;
+}
+
+.lucide-icon-sm {
+  width: 15px;
+  height: 15px;
+}
+
+.lucide-icon-md {
+  width: 18px;
+  height: 18px;
+}
+
+.lucide-icon-lg {
+  width: 24px;
+  height: 24px;
+}
+
+/* ==========================================================================
+   RESET & BASE
+   ========================================================================== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: var(--bg-cream);
+  color: var(--text-dark);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  overflow-x: hidden;
+  min-height: 100vh;
+  background-color: var(--bg-cream);
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  outline: none;
+}
+
+button {
+  cursor: pointer;
+}
+
+.container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.container-narrow {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ==========================================================================
+   TYPOGRAPHY
+   ========================================================================== */
+.serif-heading {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  color: var(--text-dark);
+  letter-spacing: -0.01em;
+}
+
+.section-eyebrow {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.24em;
+  color: #9C7A70;
+  margin-bottom: 8px;
+}
+
+.section-main-title {
+  font-family: var(--font-serif);
+  font-size: clamp(1.9rem, 3.2vw, 2.6rem);
+  font-weight: 500;
+  color: var(--text-dark);
+  margin-bottom: 10px;
+  line-height: 1.25;
+}
+
+.section-subtext {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  max-width: 580px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.handwritten-watermark {
+  font-family: var(--font-script);
+  font-size: 1.8rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   01. ANNOUNCEMENT BAR (Soft Blush Cream)
+   ========================================================================== */
+.announcement-bar {
+  background: #F7EBE8;
+  color: #333333;
+  padding: 8px 16px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-align: center;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.announcement-bar span {
+  display: inline-block;
+}
+
+/* ==========================================================================
+   02. HEADER & NAVIGATION (Pitch Black Theme)
+   ========================================================================== */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: var(--bg-dark);
+  color: var(--text-light);
+  border-bottom: 1px solid var(--border-dark);
+  transition: var(--transition);
+}
+
+.header-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  height: 86px;
+  gap: 20px;
+}
+
+/* Left Nav */
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.header-nav a {
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: #C8C8D0;
+  position: relative;
+  padding: 6px 0;
+  transition: var(--transition);
+}
+
+.header-nav a:hover,
+.header-nav a.active {
+  color: #FFFFFF;
+}
+
+.header-nav a.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: #FFFFFF;
+}
+
+/* Center Logo */
+.logo-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.brand-logo-img {
+  height: 85px;
+  width: auto;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+
+.brand-logo-img:hover {
+  transform: scale(1.02);
+}
+
+/* Right Actions */
+.header-actions-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 24px;
+}
+
+.header-action-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #C8C8D0;
+  background: transparent;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.header-action-item:hover {
+  color: #FFFFFF;
+}
+
+.header-action-item svg {
+  width: 17px;
+  height: 17px;
+  stroke-width: 1.8;
+}
+
+.cart-counter-pill {
+  background: #FFFFFF;
+  color: #0A0A0C;
+  font-size: 0.65rem;
+  font-weight: 700;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hamburger-btn {
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 26px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.hamburger-btn span {
+  display: block;
+  height: 2px;
+  width: 100%;
+  background: #FFFFFF;
+  border-radius: 2px;
+}
+
+/* ==========================================================================
+   BUTTONS (Blush Pink Aesthetic)
+   ========================================================================== */
+.btn-blush {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--color-blush);
+  color: #222222;
+  font-weight: 600;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 13px 26px;
+  border-radius: 3px;
+  transition: var(--transition);
+  box-shadow: 0 2px 10px rgba(223, 189, 181, 0.35);
+}
+
+.btn-blush:hover {
+  background: var(--color-blush-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(223, 189, 181, 0.5);
+}
+
+.btn-blush-sm {
+  padding: 10px 18px;
+  font-size: 0.74rem;
+}
+
+.btn-outline-dark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  color: var(--text-dark);
+  font-weight: 600;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 12px 24px;
+  border-radius: 3px;
+  transition: var(--transition);
+}
+
+.btn-outline-dark:hover {
+  border-color: var(--text-dark);
+  background: rgba(0, 0, 0, 0.03);
+}
+
+/* ==========================================================================
+   03. HERO SECTION (Small Beads Big Stories)
+   ========================================================================== */
+.hero-wrapper {
+  position: relative;
+  background: #111116;
+  color: #FFFFFF;
+  overflow: hidden;
+  min-height: 520px;
+  display: flex;
+  align-items: center;
+}
+
+.hero-bg-image {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center right;
+  z-index: 1;
+}
+
+.hero-overlay-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(10, 10, 12, 0.88) 0%, rgba(10, 10, 12, 0.65) 45%, rgba(10, 10, 12, 0.1) 100%);
+  z-index: 2;
+}
+
+.hero-inner {
+  position: relative;
+  z-index: 3;
+  padding: 80px 0;
+  max-width: 540px;
+}
+
+.hero-tag {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #E2C3BA;
+  margin-bottom: 14px;
+  display: block;
+}
+
+.hero-headline {
+  font-family: var(--font-serif);
+  font-size: clamp(2.6rem, 4.8vw, 3.8rem);
+  font-weight: 500;
+  line-height: 1.15;
+  color: #FFFFFF;
+  margin-bottom: 18px;
+}
+
+.hero-description {
+  font-size: 0.96rem;
+  color: #D6D6DF;
+  line-height: 1.65;
+  margin-bottom: 28px;
+  max-width: 440px;
+}
+
+.hero-watermark-right {
+  position: absolute;
+  bottom: 40px;
+  right: 48px;
+  z-index: 3;
+  text-align: right;
+}
+
+.hero-watermark-right .handwritten-watermark {
+  font-size: 2.2rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.slider-indicators-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 36px;
+}
+
+.slider-bar {
+  width: 24px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+}
+
+.slider-bar.active {
+  background: #FFFFFF;
+  width: 36px;
+}
+
+/* ==========================================================================
+   04. TRUST BAR (4 Feature Columns)
+   ========================================================================== */
+.trust-features-bar {
+  background: #FFFFFF;
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 32px 0;
+}
+
+.trust-features-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.trust-feature-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0 20px;
+  border-right: 1px solid var(--border-subtle);
+}
+
+.trust-feature-col:last-child {
+  border-right: none;
+}
+
+.trust-icon-svg {
+  width: 28px;
+  height: 28px;
+  color: #222222;
+  margin-bottom: 10px;
+}
+
+.trust-feature-col h4 {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--text-dark);
+  margin-bottom: 4px;
+}
+
+.trust-feature-col p {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   05. SHOP BY CATEGORY (6 Aesthetic Cards)
+   ========================================================================== */
+.category-section-wrap {
+  padding: 70px 0 80px;
+  background: var(--bg-cream);
+  text-align: center;
+}
+
+.category-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
+  margin-top: 40px;
+}
+
+.aesthetic-cat-card {
+  display: flex;
+  flex-direction: column;
+  background: #FFFFFF;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  transition: var(--transition);
+}
+
+.aesthetic-cat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+}
+
+.cat-card-thumb {
+  aspect-ratio: 1/1;
+  overflow: hidden;
+  background: #F4EFEB;
+}
+
+.cat-card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+.aesthetic-cat-card:hover .cat-card-thumb img {
+  transform: scale(1.06);
+}
+
+.cat-card-footer {
+  padding: 12px 8px;
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* ==========================================================================
+   06. EDITORIAL FULL-WIDTH BANNER ("Jewellery That Feels Like You")
+   ========================================================================== */
+.editorial-banner-section {
+  position: relative;
+  background: #EFE8E0;
+  overflow: hidden;
+  min-height: 480px;
+  display: flex;
+  align-items: center;
+  margin-bottom: 80px;
+}
+
+.editorial-bg-img {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: right center;
+  z-index: 1;
+}
+
+.editorial-banner-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(246, 241, 236, 0.96) 0%, rgba(246, 241, 236, 0.88) 36%, rgba(246, 241, 236, 0.2) 65%, transparent 88%);
+  z-index: 2;
+}
+
+.editorial-text-panel {
+  position: relative;
+  z-index: 3;
+  padding: 80px 0;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.editorial-text-panel h2 {
+  font-family: var(--font-serif);
+  font-size: clamp(2.4rem, 4vw, 3.2rem);
+  font-weight: 500;
+  line-height: 1.18;
+  color: var(--text-dark);
+  margin-bottom: 16px;
+}
+
+.editorial-text-panel p {
+  font-size: 0.98rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+  margin-bottom: 30px;
+  max-width: 400px;
+}
+
+.editorial-doodle {
+  position: absolute;
+  top: 35px;
+  right: -25px;
+  font-family: var(--font-script);
+  font-size: 1.55rem;
+  color: #8C726B;
+  text-align: center;
+  line-height: 1.15;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+/* ==========================================================================
+   07. BEST SELLERS ("Loved by Many")
+   ========================================================================== */
+.bestsellers-section-wrap {
+  padding: 0 0 80px;
+}
+
+.bestsellers-header-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 36px;
+}
+
+.bestsellers-products-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.bestseller-item-card {
+  background: #FFFFFF;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  transition: var(--transition);
+  position: relative;
+}
+
+.bestseller-item-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+}
+
+.card-img-wrap {
+  position: relative;
+  aspect-ratio: 1/1;
+  background: #F6F2EE;
+  overflow: hidden;
+}
+
+.card-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+.bestseller-item-card:hover .card-img-wrap img {
+  transform: scale(1.05);
+}
+
+.card-wishlist-circle {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: #72727D;
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+.card-wishlist-circle svg {
+  width: 15px;
+  height: 15px;
+  stroke: #72727D;
+  stroke-width: 1.8;
+  fill: none;
+  transition: all 0.2s ease;
+}
+
+.card-wishlist-circle:hover svg,
+.card-wishlist-circle.active svg {
+  stroke: #E11D48;
+  fill: #E11D48;
+}
+
+.card-wishlist-circle:hover,
+.card-wishlist-circle.active {
+  color: #E11D48;
+  border-color: #E11D48;
+}
+
+.card-body-content {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.card-title-text {
+  font-family: var(--font-serif);
+  font-size: 1.02rem;
+  font-weight: 500;
+  color: var(--text-dark);
+  margin-bottom: 6px;
+}
+
+.card-stars-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: #D9822B;
+  margin-bottom: 8px;
+}
+
+.stars-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.stars-cluster svg {
+  width: 12px;
+  height: 12px;
+  fill: #D9822B;
+  stroke: #D9822B;
+}
+
+.card-stars-row span {
+  color: var(--text-subtle);
+  margin-left: 2px;
+}
+
+.card-price-text {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 14px;
+  margin-top: auto;
+}
+
+.card-add-button {
+  width: 100%;
+  background: var(--color-blush);
+  color: #222222;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 11px;
+  border-radius: 3px;
+  transition: var(--transition);
+  text-align: center;
+}
+
+.card-add-button:hover {
+  background: var(--color-blush-hover);
+}
+
+/* ==========================================================================
+   08. CRAFT BANNER ("More Than Jewellery")
+   ========================================================================== */
+.craft-banner-section {
+  position: relative;
+  background: #1B1817;
+  color: #FFFFFF;
+  overflow: hidden;
+  min-height: 420px;
+  display: flex;
+  align-items: center;
+  margin-bottom: 80px;
+}
+
+.craft-bg-img {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: right center;
+  opacity: 1;
+}
+
+.craft-banner-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(22, 17, 15, 0.92) 0%, rgba(22, 17, 15, 0.72) 40%, rgba(22, 17, 15, 0.18) 72%, transparent 95%);
+}
+
+.craft-content-panel {
+  position: relative;
+  z-index: 2;
+  padding: 60px 0;
+  max-width: 480px;
+}
+
+.craft-content-panel h2 {
+  font-family: var(--font-serif);
+  font-size: clamp(2rem, 3.2vw, 2.5rem);
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.craft-content-panel p {
+  font-size: 0.92rem;
+  color: #DDD8D3;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.craft-watermark-right {
+  position: absolute;
+  right: 40px;
+  bottom: 30px;
+  z-index: 2;
+  font-family: var(--font-script);
+  font-size: 2.2rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ==========================================================================
+   09. TESTIMONIALS ("Real Stories, Real Love")
+   ========================================================================== */
+.testimonials-section {
+  padding: 0 0 80px;
+  text-align: center;
+}
+
+.testimonials-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 36px;
+}
+
+.testimonial-card-item {
+  background: #FFFFFF;
+  border-radius: 6px;
+  padding: 32px 24px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.testimonial-stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: #D9822B;
+  margin-bottom: 14px;
+}
+
+.testimonial-stars svg {
+  width: 14px;
+  height: 14px;
+  fill: #D9822B;
+  stroke: #D9822B;
+}
+
+.testimonial-quote {
+  font-family: var(--font-serif);
+  font-size: 0.98rem;
+  line-height: 1.65;
+  color: var(--text-dark);
+  margin-bottom: 18px;
+  font-style: normal;
+}
+
+.testimonial-author-name {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   10. INSTAGRAM SECTION ("FOLLOW US @BEADIZO")
+   ========================================================================== */
+.instagram-strip-section {
+  padding: 0 0 70px;
+  text-align: center;
+}
+
+.insta-strip-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10px;
+  margin-top: 32px;
+}
+
+.insta-tile {
+  aspect-ratio: 1/1;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #F4EFEB;
+}
+
+.insta-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.insta-tile:hover img {
+  transform: scale(1.08);
+}
+
+/* ==========================================================================
+   11. NEWSLETTER BANNER ("Join Our Beadizo Family")
+   ========================================================================== */
+.newsletter-strip-section {
+  background: #F4EFEB;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 48px 0;
+}
+
+.newsletter-flex-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 40px;
+}
+
+.newsletter-left h3 {
+  font-family: var(--font-serif);
+  font-size: 1.65rem;
+  font-weight: 500;
+  color: var(--text-dark);
+  margin-bottom: 4px;
+}
+
+.newsletter-left p {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.newsletter-center-form {
+  display: flex;
+  gap: 8px;
+  flex-grow: 1;
+  max-width: 440px;
+}
+
+.newsletter-email-input {
+  flex-grow: 1;
+  background: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  padding: 12px 16px;
+  border-radius: 3px;
+  font-size: 0.88rem;
+  color: var(--text-dark);
+}
+
+.newsletter-doodle-right {
+  font-family: var(--font-script);
+  font-size: 1.4rem;
+  color: #8C726B;
+  text-align: right;
+  line-height: 1.15;
+}
+
+/* ==========================================================================
+   12. FOOTER (Pitch Black Theme)
+   ========================================================================== */
+.site-footer-black {
+  background: #000000;
+  color: #FFFFFF;
+  padding: 64px 0 24px;
+}
+
+.footer-columns-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr 1.3fr;
+  gap: 36px;
+  padding-bottom: 48px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footer-brand-panel p {
+  font-size: 0.84rem;
+  color: #A6A6B2;
+  line-height: 1.65;
+  margin: 16px 0 20px;
+  max-width: 280px;
+}
+
+.footer-social-icons {
+  display: flex;
+  gap: 14px;
+}
+
+.footer-social-icons a {
+  color: #A6A6B2;
+  transition: color 0.2s ease;
+}
+
+.footer-social-icons a:hover {
+  color: #FFFFFF;
+}
+
+.footer-column-item h4 {
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin-bottom: 18px;
+  color: #FFFFFF;
+}
+
+.footer-link-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footer-link-list a {
+  font-size: 0.82rem;
+  color: #A6A6B2;
+  transition: color 0.2s ease;
+}
+
+.footer-link-list a:hover {
+  color: #FFFFFF;
+}
+
+.footer-email-box {
+  display: flex;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 14px;
+}
+
+.footer-email-box input {
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  color: #FFFFFF;
+  flex-grow: 1;
+}
+
+.footer-email-box button {
+  background: #222222;
+  color: #FFFFFF;
+  padding: 0 14px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.footer-email-box button:hover {
+  background: var(--color-blush);
+  color: #000;
+}
+
+.footer-bottom-legal {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 24px;
+  font-size: 0.76rem;
+  color: #727280;
+}
+
+/* ==========================================================================
+   SLIDE-OVER DRAWERS & MODALS (Cart, Wishlist & Search)
+   ========================================================================== */
+.bag-drawer-backdrop,
+.wishlist-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 2000;
+  opacity: 0;
+  visibility: hidden;
+  transition: var(--transition);
+}
+
+.bag-drawer-backdrop.active,
+.wishlist-drawer-backdrop.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.bag-drawer,
+.wishlist-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 420px;
+  max-width: 90vw;
+  height: 100%;
+  background: #FFFFFF;
+  color: var(--text-dark);
+  z-index: 2010;
+  box-shadow: -4px 0 30px rgba(0, 0, 0, 0.15);
+  transform: translateX(100%);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.bag-drawer.open,
+.wishlist-drawer.open {
+  transform: translateX(0);
+}
+
+.bag-drawer-header,
+.wishlist-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.bag-drawer-header h3,
+.wishlist-drawer-header h3 {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+}
+
+.close-drawer-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.close-drawer-btn:hover {
+  color: var(--text-dark);
+}
+
+.close-drawer-btn svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+}
+
+.bag-drawer-items,
+.wishlist-drawer-items {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.drawer-item {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.drawer-item-img {
+  width: 64px;
+  height: 64px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.drawer-item-title {
+  font-family: var(--font-serif);
+  font-size: 0.92rem;
+  margin-bottom: 2px;
+}
+
+.drawer-item-price {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--text-dark);
+}
+
+.drawer-item-remove {
+  background: transparent;
+  border: none;
+  color: var(--text-subtle);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.drawer-item-remove:hover {
+  color: #E11D48;
+  background: rgba(225, 29, 72, 0.08);
+}
+
+.drawer-item-remove svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+}
+
+.bag-drawer-footer {
+  padding: 20px 24px;
+  border-top: 1px solid var(--border-subtle);
+  background: #FAF8F5;
+}
+
+.drawer-subtotal-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 14px;
+}
+
+.drawer-subtotal-label {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.drawer-subtotal-val {
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.search-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 12, 0.94);
+  backdrop-filter: blur(16px);
+  z-index: 2050;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-overlay.open {
+  display: flex;
+}
+
+/* ==========================================================================
+   COLLECTIONS PAGE SPECIFIC STYLES
+   ========================================================================== */
+/* Collections Hero Full-Width Banner ("Every Bead Tells a Story") */
+.col-hero-section {
+  position: relative;
+  background: #EFE8E0;
+  overflow: hidden;
+  min-height: 480px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.col-hero-bg-img {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: right center;
+  z-index: 1;
+}
+
+.col-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(246, 241, 236, 0.96) 0%, rgba(246, 241, 236, 0.88) 36%, rgba(246, 241, 236, 0.2) 65%, transparent 88%);
+  z-index: 2;
+}
+
+.col-hero-content {
+  position: relative;
+  z-index: 3;
+  padding: 80px 0;
+  max-width: 520px;
+}
+
+.col-hero-content h1 {
+  font-family: var(--font-serif);
+  font-size: clamp(2.6rem, 4.4vw, 3.8rem);
+  font-weight: 500;
+  line-height: 1.15;
+  color: var(--text-dark);
+  margin: 10px 0 16px;
+}
+
+.col-hero-content p {
+  font-size: 0.98rem;
+  color: var(--text-muted);
+  line-height: 1.65;
+  margin-bottom: 26px;
+  max-width: 480px;
+}
+
+.col-hero-watermark {
+  position: absolute;
+  top: 30px;
+  right: 36px;
+  z-index: 3;
+  font-family: var(--font-script);
+  font-size: 1.65rem;
+  color: #8C726B;
+  line-height: 1.15;
+  text-align: center;
+  pointer-events: none;
+}
+
+/* Circular Category Nav Strip */
+.category-circles-section {
+  padding: 40px 0 24px;
+  background: var(--bg-cream);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.category-circles-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
+  text-align: center;
+}
+
+.category-circle-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.circle-img-wrap {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  border: 2px solid #FFFFFF;
+  transition: var(--transition);
+}
+
+.circle-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.category-circle-item:hover .circle-img-wrap {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  border-color: var(--color-blush);
+}
+
+.category-circle-item:hover .circle-img-wrap img {
+  transform: scale(1.08);
+}
+
+.category-circle-item.active .circle-img-wrap {
+  border-color: #0A0A0C;
+  box-shadow: 0 0 0 3px #DFBDB5, 0 8px 22px rgba(0, 0, 0, 0.16);
+  transform: translateY(-4px) scale(1.05);
+}
+
+.category-circle-item.active .circle-img-wrap img {
+  transform: scale(1.06);
+}
+
+.circle-title {
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  transition: var(--transition);
+}
+
+.category-circle-item.active .circle-title {
+  color: #0A0A0C;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.circle-count {
+  font-size: 0.72rem;
+  color: var(--text-subtle);
+  margin-top: -6px;
+}
+
+/* Filter & Sort Toolbar */
+.filter-sort-toolbar {
+  padding: 24px 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.filter-left-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.filter-btn-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-dark);
+  padding: 8px 14px;
+  background: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.filter-btn-pill:hover {
+  border-color: var(--text-dark);
+}
+
+.filter-btn-pill.active,
+.filter-btn-pill.filter-btn-primary {
+  background: #0A0A0C;
+  color: #FFFFFF;
+  border-color: #0A0A0C;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.filter-btn-pill.active:hover,
+.filter-btn-pill.filter-btn-primary:hover {
+  background: #1F1F24;
+  color: #FFFFFF;
+}
+
+.filter-right-count {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Mid-Page Handcrafted With Love Banner */
+.mid-crafted-banner {
+  margin: 40px 0 80px;
+  background: #F4EFEB;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.mid-crafted-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr 1fr 1fr;
+  align-items: center;
+}
+
+.mid-banner-img {
+  height: 100%;
+  min-height: 220px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.mid-crafted-content {
+  padding: 36px 28px;
+}
+
+.mid-crafted-content h3 {
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--text-dark);
+  margin-bottom: 8px;
+}
+
+.mid-crafted-content p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 18px;
+}
+
+.mid-crafted-features {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mid-feature-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.mid-feature-row svg {
+  width: 18px;
+  height: 18px;
+  color: #333333;
+}
+
+.mid-banner-visual-right {
+  position: relative;
+  height: 100%;
+}
+
+.mid-banner-visual-right .handwritten-watermark {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: auto;
+  font-size: 1.55rem;
+  color: #382A24;
+  text-align: left;
+  line-height: 1.15;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   OUR STORY PAGE SPECIFIC STYLES
+   ========================================================================== */
+.story-hero-section {
+  position: relative;
+  background: #1A1615;
+  color: #FFFFFF;
+  min-height: 480px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.story-hero-bg {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center right;
+  z-index: 1;
+}
+
+.story-hero-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(15, 12, 11, 0.92) 0%, rgba(15, 12, 11, 0.65) 50%, rgba(15, 12, 11, 0.15) 100%);
+  z-index: 2;
+}
+
+.story-hero-inner {
+  position: relative;
+  z-index: 3;
+  padding: 80px 0;
+  max-width: 520px;
+}
+
+.story-hero-inner h1 {
+  font-family: var(--font-serif);
+  font-size: clamp(2.6rem, 4.6vw, 3.8rem);
+  font-weight: 500;
+  line-height: 1.15;
+  color: #FFFFFF;
+  margin: 12px 0 18px;
+}
+
+.story-hero-inner p {
+  font-size: 0.96rem;
+  color: #DDD5CF;
+  line-height: 1.65;
+  margin-bottom: 28px;
+  max-width: 440px;
+}
+
+.story-hero-watermark {
+  position: absolute;
+  top: 40px;
+  left: 490px;
+  z-index: 3;
+  pointer-events: none;
+  transform: rotate(-3deg);
+}
+
+.story-hero-watermark span {
+  font-family: var(--font-script);
+  font-size: 1.85rem;
+  color: #E2C3BA;
+  line-height: 1.15;
+  text-align: center;
+  display: block;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.02em;
+}
+
+/* Our Journey Section */
+.story-journey-section {
+  padding: 80px 0 60px;
+  background: var(--bg-cream);
+}
+
+.section-eyebrow {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #8C726B;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.story-journey-grid {
+  display: grid;
+  grid-template-columns: 0.85fr 1.15fr;
+  gap: 56px;
+  align-items: center;
+}
+
+.journey-image-box {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.journey-image-box img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+.journey-content-panel {
+  position: relative;
+  padding-right: 80px;
+}
+
+.journey-content-panel h2 {
+  font-family: var(--font-serif);
+  font-size: clamp(2rem, 3.2vw, 2.7rem);
+  font-weight: 500;
+  color: var(--text-dark);
+  margin: 10px 0 16px;
+  line-height: 1.2;
+}
+
+.journey-divider-line {
+  width: 40px;
+  height: 2px;
+  background: #C49E94;
+  margin-bottom: 24px;
+}
+
+.journey-content-panel p {
+  font-size: 0.94rem;
+  color: var(--text-muted);
+  line-height: 1.75;
+  margin-bottom: 16px;
+}
+
+.journey-floral-doodle {
+  position: absolute;
+  top: -10px;
+  right: -20px;
+  width: 130px;
+  pointer-events: none;
+  opacity: 0.95;
+}
+
+.journey-floral-doodle img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.journey-floral-doodle span {
+  font-family: var(--font-script);
+  font-size: 1.4rem;
+  color: #8C726B;
+  text-align: right;
+  line-height: 1.15;
+  display: block;
+}
+
+/* 4 Brand Pillars Bar */
+.story-pillars-bar {
+  background: #FDFBF8;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 36px 0;
+  margin-bottom: 80px;
+}
+
+.story-pillars-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.story-pillar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0 24px;
+  border-right: 1px solid var(--border-subtle);
+}
+
+.story-pillar-col:last-child {
+  border-right: none;
+}
+
+.story-pillar-icon {
+  width: 28px;
+  height: 28px;
+  color: #222222;
+  margin-bottom: 12px;
+}
+
+.story-pillar-col h4 {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--text-dark);
+  margin-bottom: 4px;
+}
+
+.story-pillar-col p {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+/* Meet The Heart Behind Beadizo */
+.story-heart-section {
+  padding-bottom: 90px;
+}
+
+.story-heart-grid {
+  display: grid;
+  grid-template-columns: 0.85fr 1.15fr;
+  gap: 50px;
+  align-items: center;
+}
+
+.heart-left-panel h2 {
+  font-family: var(--font-serif);
+  font-size: clamp(2rem, 3.2vw, 2.7rem);
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--text-dark);
+  margin: 10px 0 20px;
+}
+
+.heart-left-panel p {
+  font-size: 0.94rem;
+  color: var(--text-muted);
+  line-height: 1.75;
+  margin-bottom: 28px;
+}
+
+.heart-signature {
+  margin-top: 16px;
+}
+
+.heart-signature img {
+  width: 130px;
+  height: auto;
+  display: block;
+}
+
+.heart-signature span {
+  font-family: var(--font-script);
+  font-size: 1.8rem;
+  color: #222222;
+  line-height: 1.2;
+}
+
+.heart-montage-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.montage-img-wrap {
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  height: 100%;
+}
+
+.montage-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.montage-quote-card {
+  background: #E8D3CE;
+  border-radius: 6px;
+  padding: 32px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  color: #222222;
+}
+
+.montage-quote-card .quote-mark {
+  font-family: var(--font-serif);
+  font-size: 2.4rem;
+  line-height: 1;
+  color: #333333;
+}
+
+.montage-quote-card p {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: #222222;
+  margin: 12px 0 16px;
+}
+
+.montage-quote-card .quote-author {
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #555555;
+  position: relative;
+  padding-top: 14px;
+}
+
+.montage-quote-card .quote-author::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 32px;
+  height: 1px;
+  background: #888888;
+}
+
+/* Thank You For Being A Part Of Our Story (Warm Luxury Strip without BG Image) */
+.story-thankyou-section {
+  position: relative;
+  background: linear-gradient(135deg, #FDFBF9 0%, #F5EFEB 100%);
+  color: var(--text-dark);
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.story-thankyou-flex {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 64px 0;
+  gap: 36px;
+}
+
+.thankyou-text .thankyou-eyebrow {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #8C726B;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.thankyou-text h3 {
+  font-family: var(--font-serif);
+  font-size: clamp(2rem, 3.4vw, 2.7rem);
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--text-dark);
+  margin-bottom: 10px;
+}
+
+.thankyou-text p {
+  font-size: 0.98rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.thankyou-action-wrap {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex-shrink: 0;
+}
+
+.thankyou-doodle {
+  font-family: var(--font-script);
+  font-size: 1.55rem;
+  color: #8C726B;
+  line-height: 1.15;
+  text-align: right;
+  pointer-events: none;
+}
+/* ==========================================================================
+   BEADIZO — Responsive Layout Rules
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+  .header-grid {
+    grid-template-columns: auto 1fr auto;
+    height: 76px;
+  }
+
+  .header-nav {
+    display: none;
+  }
+
+  .hamburger-btn {
+    display: flex;
+  }
+
+  .header-nav.nav-open {
+    display: flex;
+    position: fixed;
+    top: 76px;
+    left: 0;
+    width: 100%;
+    height: calc(100vh - 76px);
+    background: #0A0A0C;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 32px 24px;
+    gap: 20px;
+    z-index: 999;
+  }
+
+  .header-nav.nav-open a {
+    font-size: 1.15rem;
+    color: #FFFFFF;
+    width: 100%;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 12px;
+  }
+
+  .category-cards-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .bestsellers-products-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .category-circles-grid {
+    grid-template-columns: repeat(3, 1fr);
+    row-gap: 24px;
+  }
+
+  .mid-crafted-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .insta-strip-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .insta-tile:nth-child(n+5) {
+    display: none;
+  }
+
+  .footer-columns-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .col-hero-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .col-hero-content {
+    padding: 40px 0 20px;
+  }
+
+  .col-hero-visual {
+    min-height: 240px;
+  }
+
+  .category-circles-grid {
+    display: flex;
+    overflow-x: auto;
+    gap: 20px;
+    padding-bottom: 14px;
+    justify-content: flex-start;
+    scrollbar-width: none;
+  }
+
+  .category-circles-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .category-circle-item {
+    flex-shrink: 0;
+    width: 85px;
+  }
+
+  .circle-img-wrap {
+    width: 76px;
+    height: 76px;
+  }
+
+  .trust-features-grid {
+    grid-template-columns: repeat(2, 1fr);
+    row-gap: 24px;
+  }
+
+  .trust-feature-col:nth-child(2) {
+    border-right: none;
+  }
+
+  .editorial-banner-section {
+    min-height: 420px;
+    margin-bottom: 60px;
+  }
+
+  .editorial-bg-img {
+    object-position: 75% center;
+  }
+
+  .editorial-banner-overlay {
+    background: linear-gradient(180deg, rgba(246, 241, 236, 0.95) 0%, rgba(246, 241, 236, 0.85) 55%, rgba(246, 241, 236, 0.35) 100%);
+  }
+
+  .editorial-text-panel {
+    padding: 40px 0;
+    max-width: 100%;
+  }
+
+  .editorial-doodle {
+    top: 20px;
+    right: 15px;
+  }
+
+  .col-hero-section {
+    min-height: 420px;
+  }
+
+  .col-hero-bg-img {
+    object-position: 75% center;
+  }
+
+  .col-hero-overlay {
+    background: linear-gradient(180deg, rgba(246, 241, 236, 0.95) 0%, rgba(246, 241, 236, 0.85) 55%, rgba(246, 241, 236, 0.35) 100%);
+  }
+
+  .col-hero-content {
+    padding: 40px 0;
+    max-width: 100%;
+  }
+
+  .col-hero-watermark,
+  .story-hero-watermark {
+    display: none;
+  }
+
+  .story-hero-inner {
+    padding: 60px 0;
+  }
+
+  .mid-crafted-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mid-banner-visual-right {
+    display: none;
+  }
+
+  .craft-banner-section {
+    min-height: 380px;
+    padding: 20px 0;
+  }
+
+  .craft-bg-img {
+    object-position: 70% center;
+  }
+
+  .craft-banner-overlay {
+    background: linear-gradient(180deg, rgba(22, 17, 15, 0.9) 0%, rgba(22, 17, 15, 0.72) 65%, rgba(22, 17, 15, 0.4) 100%);
+  }
+
+  .craft-content-panel {
+    padding: 36px 20px;
+  }
+
+  .craft-watermark-right {
+    display: none;
+  }
+
+  .testimonials-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .newsletter-flex-wrap {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .newsletter-center-form {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .newsletter-doodle-right {
+    text-align: center;
+  }
+
+  .story-thankyou-flex {
+    flex-direction: column;
+    text-align: center;
+    padding: 44px 0;
+    gap: 24px;
+  }
+
+  .thankyou-action-wrap {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .thankyou-doodle {
+    display: none;
+  }
+
+  .footer-columns-grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .footer-bottom-legal {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+
+  .category-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .bestsellers-products-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bestsellers-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .hero-wrapper {
+    min-height: 440px;
+  }
+
+  .hero-inner {
+    padding: 50px 0;
+  }
+
+  .hero-headline {
+    font-size: 2.3rem;
+  }
+
+  .hero-watermark-right {
+    display: none;
+  }
+
+  .craft-watermark-right {
+    display: none;
+  }
+
+  .craft-content-panel {
+    padding: 40px 0;
+  }
+
+  .story-journey-grid,
+  .story-heart-grid {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+
+  .story-pillars-grid {
+    grid-template-columns: repeat(2, 1fr);
+    row-gap: 24px;
+  }
+
+  .story-pillar-col:nth-child(2) {
+    border-right: none;
+  }
+
+  .heart-montage-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .story-thankyou-flex {
+    flex-direction: column;
+    text-align: center;
+    gap: 20px;
+  }
+}
