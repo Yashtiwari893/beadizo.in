@@ -43,6 +43,50 @@ export async function uploadMedia(file: File, folder = 'products'): Promise<stri
   return data.url;
 }
 
+export interface BulkUploadProgress {
+  current: number;
+  total: number;
+  filename: string;
+}
+
+export interface BulkUploadResult {
+  urls: string[];
+  errors: Array<{ filename: string; error: string }>;
+}
+
+/**
+ * Uploads a batch of images sequentially with real-time progress callbacks.
+ * If some images fail (e.g. invalid format), remaining files continue uploading.
+ */
+export async function uploadMediaBatch(
+  files: File[],
+  folder = 'products',
+  onProgress?: (progress: BulkUploadProgress) => void
+): Promise<BulkUploadResult> {
+  if (!isSupabaseConfigured) {
+    throw new Error('Image storage is not configured. Set your Supabase credentials in .env.local.');
+  }
+
+  const urls: string[] = [];
+  const errors: Array<{ filename: string; error: string }> = [];
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    if (onProgress) {
+      onProgress({ current: i + 1, total: files.length, filename: file.name });
+    }
+
+    try {
+      const url = await uploadMedia(file, folder);
+      urls.push(url);
+    } catch (err: any) {
+      errors.push({ filename: file.name, error: err?.message || 'Upload failed' });
+    }
+  }
+
+  return { urls, errors };
+}
+
 /** Deletes a stored image. Returns false if the file could not be removed. */
 export async function deleteMedia(publicUrl: string): Promise<boolean> {
   if (!isSupabaseConfigured || !publicUrl) return true;

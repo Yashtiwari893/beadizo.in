@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Upload, X, Star, Link as LinkIcon, Loader2, AlertCircle, Image as ImageIcon } from 'lucide-react';
-import { uploadMedia } from '@/lib/supabase/storage';
+import { uploadMediaBatch, BulkUploadProgress } from '@/lib/supabase/storage';
 import { safeImageUrl } from '@/lib/security/sanitize';
 import MediaLibraryPicker from '@/components/admin/MediaLibraryPicker';
 
@@ -21,69 +21,88 @@ export default function MultiImageUploader({
   maxImages = 6,
 }: MultiImageUploaderProps) {
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<BulkUploadProgress | null>(null);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [urlInput, setUrlInput] = useState('');
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
-
   const handleFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setValidationError(null);
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+    const rawFiles = e.target.files;
+    if (!rawFiles || rawFiles.length === 0) return;
 
-    // 1. Client-side validation: Check every file type and size BEFORE uploading
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
+    const files = Array.from(rawFiles);
+    const availableSlots = maxImages - images.length;
+    if (availableSlots <= 0) {
+      setValidationError(`Maximum of ${maxImages} images allowed.`);
+      e.target.value = '';
+      return;
+    }
 
-      // Validate MIME type or fallback extension
+    // 1. Separate valid files from client-side invalid files
+    const validFiles: File[] = [];
+    const clientErrors: string[] = [];
+
+    for (const file of files) {
       const isValidType =
         ALLOWED_MIME_TYPES.includes(file.type.toLowerCase()) ||
         /\.(jpe?g|png|webp|gif)$/i.test(file.name);
 
       if (!isValidType) {
-        setValidationError(
-          `"${file.name}" is not a supported format. Please upload JPEG, PNG, WEBP, or GIF images only.`
-        );
-        e.target.value = '';
-        return; // Halt immediately, do not attempt upload
+        clientErrors.push(`"${file.name}": Unsupported format (JPEG, PNG, WEBP, GIF only).`);
+        continue;
       }
 
-      // Validate file size (< 5MB)
       if (file.size > MAX_FILE_SIZE_BYTES) {
         const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
-        setValidationError(
-          `"${file.name}" is ${sizeMb}MB, which exceeds the 5MB size limit. Please upload an image under 5MB.`
-        );
-        e.target.value = '';
-        return; // Halt immediately, do not attempt upload
+        clientErrors.push(`"${file.name}": Exceeds 5MB limit (${sizeMb}MB).`);
+        continue;
       }
+
+      validFiles.push(file);
     }
 
-    // 2. Perform upload
+    // Cap to remaining allowed slots
+    const filesToUpload = validFiles.slice(0, availableSlots);
+    if (validFiles.length > availableSlots) {
+      clientErrors.push(`Only ${availableSlots} image slot(s) remaining; extra files skipped.`);
+    }
+
+    if (filesToUpload.length === 0) {
+      if (clientErrors.length > 0) {
+        setValidationError(clientErrors.join(' • '));
+      }
+      e.target.value = '';
+      return;
+    }
+
+    // 2. Perform bulk upload with real-time progress
     setUploading(true);
-    const uploadedUrls: string[] = [];
-    let failure: string | null = null;
+    setUploadProgress({ current: 0, total: filesToUpload.length, filename: '' });
 
     try {
-      for (let i = 0; i < files.length; i++) {
-        if (images.length + uploadedUrls.length >= maxImages) {
-          failure = `Only ${maxImages} images are allowed; the rest were skipped.`;
-          break;
-        }
-        try {
-          uploadedUrls.push(await uploadMedia(files[i], 'products'));
-        } catch (err: any) {
-          // Report the first failure but keep whatever already uploaded,
-          // instead of discarding the whole batch.
-          failure = `${files[i].name}: ${err?.message || 'upload failed'}`;
-          break;
-        }
+      const result = await uploadMediaBatch(filesToUpload, 'products', (p) => {
+        setUploadProgress(p);
+      });
+
+      if (result.urls.length > 0) {
+        onChange([...images, ...result.urls]);
       }
+
+      const allErrors = [
+        ...clientErrors,
+        ...result.errors.map((err) => `${err.filename}: ${err.error}`),
+      ];
+
+      if (allErrors.length > 0) {
+        setValidationError(allErrors.join(' • '));
+      }
+    } catch (err: any) {
+      setValidationError(err?.message || 'Upload failed.');
     } finally {
-      if (uploadedUrls.length > 0) onChange([...images, ...uploadedUrls]);
-      if (failure) setValidationError(failure);
       setUploading(false);
+      setUploadProgress(null);
       e.target.value = '';
     }
   };
@@ -369,10 +388,33 @@ export default function MultiImageUploader({
                 style={{ display: 'none' }}
               />
               {uploading ? (
-                <>
-                  <Loader2 size={20} className="lucide-spin" style={{ color: '#DFBDB5', animation: 'spin 1s linear infinite' }} />
-                  <span style={{ fontSize: '0.68rem', marginTop: '6px', color: '#DFBDB5' }}>Uploading...</span>
-                </>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', padding: '0 4px' }}>
+                  <Loader2 size={18} className="lucide-spin" style={{ color: '#DFBDB5', animation: 'spin 1s linear infinite' }} />
+                  <span style={{ fontSize: '0.65rem', marginTop: '4px', color: '#DFBDB5', fontWeight: 600 }}>
+                    {uploadProgress ? `${uploadProgress.current}/${uploadProgress.total}` : 'Uploading...'}
+                  </span>
+                  {uploadProgress && (
+                    <div
+                      style={{
+                        width: '100%',
+                        height: '3px',
+                        background: 'rgba(255,255,255,0.15)',
+                        borderRadius: '2px',
+                        marginTop: '4px',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: `${Math.max(10, Math.round((uploadProgress.current / uploadProgress.total) * 100))}%`,
+                          height: '100%',
+                          background: '#DFBDB5',
+                          transition: 'width 0.2s ease',
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
               ) : (
                 <>
                   <Upload size={20} style={{ color: '#DFBDB5', marginBottom: '6px' }} />

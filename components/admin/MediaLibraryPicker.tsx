@@ -24,6 +24,8 @@ import {
   checkMediaUsage,
   deleteMediaWithSafety,
   uploadMedia,
+  uploadMediaBatch,
+  BulkUploadProgress,
 } from '@/lib/supabase/storage';
 import { getCroppedImg, PixelCrop } from '@/lib/utils/cropImage';
 
@@ -72,6 +74,8 @@ export default function MediaLibraryPicker({
   // Uploading state (in Tab 2)
   const [uploadFolder, setUploadFolder] = useState<string>(defaultFolder);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<BulkUploadProgress | null>(null);
+  const [uploadErrors, setUploadErrors] = useState<Array<{ filename: string; error: string }>>([]);
   const [recentUploads, setRecentUploads] = useState<string[]>([]);
 
   // Crop Tool state
@@ -118,6 +122,8 @@ export default function MediaLibraryPicker({
       loadMedia();
       setSelectedUrls([]);
       setRecentUploads([]);
+      setUploadErrors([]);
+      setUploadProgress(null);
       if (defaultFolder && defaultFolder !== 'products') {
         setSelectedFolder(defaultFolder);
         setUploadFolder(defaultFolder);
@@ -156,26 +162,47 @@ export default function MediaLibraryPicker({
     }
   };
 
-  // Upload handler in Tab 2
+  // Upload handler in Tab 2 (Supports batch up to 20 images with progress & WebP conversion)
   const handleUploadFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+    const rawFiles = e.target.files;
+    if (!rawFiles || rawFiles.length === 0) return;
+
+    const allFiles = Array.from(rawFiles);
+    const maxBatch = 20;
+    const filesToUpload = allFiles.slice(0, maxBatch);
+    const skippedCount = allFiles.length - filesToUpload.length;
 
     setUploading(true);
     setErrorMsg(null);
-    const newUrls: string[] = [];
+    setUploadErrors([]);
+    setUploadProgress({ current: 0, total: filesToUpload.length, filename: '' });
 
     try {
-      for (let i = 0; i < files.length; i++) {
-        const url = await uploadMedia(files[i], uploadFolder);
-        newUrls.push(url);
+      const result = await uploadMediaBatch(filesToUpload, uploadFolder, (progress) => {
+        setUploadProgress(progress);
+      });
+
+      if (result.urls.length > 0) {
+        setRecentUploads((prev) => [...result.urls, ...prev]);
+        await loadMedia();
       }
-      setRecentUploads((prev) => [...newUrls, ...prev]);
-      await loadMedia();
+
+      const errors = [...result.errors];
+      if (skippedCount > 0) {
+        errors.push({
+          filename: 'Batch Limit',
+          error: `Maximum 20 images allowed at once. ${skippedCount} file(s) were skipped.`,
+        });
+      }
+
+      if (errors.length > 0) {
+        setUploadErrors(errors);
+      }
     } catch (err: any) {
       setErrorMsg(err?.message || 'Upload failed.');
     } finally {
       setUploading(false);
+      setUploadProgress(null);
       e.target.value = '';
     }
   };
@@ -890,6 +917,42 @@ export default function MediaLibraryPicker({
               </div>
             </div>
 
+            {/* Upload Errors Alert Banner */}
+            {uploadErrors.length > 0 && (
+              <div
+                style={{
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  background: 'rgba(239, 68, 68, 0.12)',
+                  border: '1px solid rgba(239, 68, 68, 0.35)',
+                  color: '#FCA5A5',
+                  fontSize: '0.8rem',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
+                    <AlertTriangle size={15} color="#EF4444" />
+                    <span>Some files could not be uploaded ({uploadErrors.length}):</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setUploadErrors([])}
+                    title="Dismiss"
+                    style={{ background: 'none', border: 'none', color: '#FCA5A5', cursor: 'pointer' }}
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+                <ul style={{ margin: 0, paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                  {uploadErrors.map((err, idx) => (
+                    <li key={idx}>
+                      <strong>{err.filename}:</strong> {err.error}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {/* Drop Zone */}
             <label
               style={{
@@ -908,27 +971,60 @@ export default function MediaLibraryPicker({
             >
               <input
                 type="file"
-                multiple={multiSelect}
+                multiple
                 accept="image/jpeg,image/png,image/webp,image/gif"
                 disabled={uploading}
                 onChange={handleUploadFiles}
                 style={{ display: 'none' }}
               />
 
-              {uploading ? (
-                <>
+              {uploading && uploadProgress ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: '380px' }}>
                   <Loader2
                     size={38}
                     className="lucide-spin"
-                    style={{ color: '#DFBDB5', animation: 'spin 1s linear infinite', marginBottom: '12px' }}
+                    style={{ color: '#DFBDB5', animation: 'spin 1s linear infinite', marginBottom: '14px' }}
                   />
-                  <span style={{ fontSize: '0.95rem', fontWeight: 600, color: '#FFFFFF' }}>
-                    Uploading to Supabase Storage ({uploadFolder})...
+                  <span style={{ fontSize: '1rem', fontWeight: 600, color: '#FFFFFF', marginBottom: '4px' }}>
+                    Uploading {uploadProgress.current} of {uploadProgress.total}...
                   </span>
-                  <span style={{ fontSize: '0.78rem', color: '#A6A6B2', marginTop: '4px' }}>
-                    Validating raster bytes and optimizing storage path
+                  <span
+                    style={{
+                      fontSize: '0.78rem',
+                      color: '#DFBDB5',
+                      opacity: 0.85,
+                      marginBottom: '14px',
+                      maxWidth: '320px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {uploadProgress.filename || 'Processing image...'}
                   </span>
-                </>
+                  {/* Progress bar */}
+                  <div
+                    style={{
+                      width: '100%',
+                      height: '6px',
+                      background: 'rgba(255,255,255,0.1)',
+                      borderRadius: '3px',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: `${Math.max(5, Math.round((uploadProgress.current / uploadProgress.total) * 100))}%`,
+                        height: '100%',
+                        background: '#DFBDB5',
+                        transition: 'width 0.25s ease',
+                      }}
+                    />
+                  </div>
+                  <span style={{ fontSize: '0.72rem', color: '#8E8E9B', marginTop: '10px' }}>
+                    Auto-converting to WebP (80% quality) • Capped at 1600px
+                  </span>
+                </div>
               ) : (
                 <>
                   <div
@@ -947,10 +1043,10 @@ export default function MediaLibraryPicker({
                     <Upload size={24} />
                   </div>
                   <span style={{ fontSize: '1rem', fontWeight: 600, color: '#FFFFFF' }}>
-                    Click or drag & drop images to upload
+                    Click or drag & drop images to bulk upload
                   </span>
                   <span style={{ fontSize: '0.78rem', color: '#8E8E9B', marginTop: '6px' }}>
-                    Supported formats: JPG, PNG, WEBP, GIF (Max 5MB each)
+                    Select up to 20 images at once • Max 5MB each • Auto-converted to WebP
                   </span>
                 </>
               )}
