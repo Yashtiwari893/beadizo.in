@@ -132,14 +132,44 @@ async function callGeminiAI(prompt: string): Promise<string> {
 }
 
 async function generateWithAI(prompt: string): Promise<string> {
-  if (process.env.GEMINI_API_KEY?.trim()) {
-    return await callGeminiAI(prompt);
+  const hasGroq = Boolean(process.env.GROQ_API_KEY?.trim());
+  const hasGemini = Boolean(process.env.GEMINI_API_KEY?.trim());
+
+  if (!hasGroq && !hasGemini) {
+    throw new Error('NO_API_KEY');
   }
-  if (process.env.GROQ_API_KEY?.trim()) {
-    return await callGroqAI(prompt);
+
+  // 1. First priority: Groq (Ultra-fast)
+  if (hasGroq) {
+    try {
+      const result = await callGroqAI(prompt);
+      if (result && result.trim().length > 0) {
+        return result;
+      }
+    } catch (groqErr: any) {
+      console.warn(
+        '[admin/ai-generate] Groq primary failed, falling back to Gemini:',
+        groqErr?.message || groqErr
+      );
+      if (!hasGemini) {
+        throw groqErr;
+      }
+    }
   }
-  throw new Error('NO_API_KEY');
+
+  // 2. Fallback: Google Gemini
+  if (hasGemini) {
+    try {
+      return await callGeminiAI(prompt);
+    } catch (geminiErr: any) {
+      console.error('[admin/ai-generate] Gemini fallback also failed:', geminiErr?.message || geminiErr);
+      throw geminiErr;
+    }
+  }
+
+  throw new Error('Failed to generate content with AI.');
 }
+
 
 
 export async function POST(request: NextRequest) {
@@ -258,7 +288,7 @@ Example format:
       return NextResponse.json(
         {
           error:
-            'AI API key is not configured. Please set GEMINI_API_KEY in .env.local to enable AI Assist, or write manually.',
+            'AI API key is not configured. Please set GROQ_API_KEY (or GEMINI_API_KEY) in .env.local to enable AI Assist, or write manually.',
         },
         { status: 503 }
       );
@@ -266,7 +296,7 @@ Example format:
 
     if (err?.message === 'INVALID_API_KEY') {
       return NextResponse.json(
-        { error: 'Invalid Gemini API key in .env.local. Please verify your GEMINI_API_KEY.' },
+        { error: 'Invalid AI API key in .env.local. Please verify your GROQ_API_KEY or GEMINI_API_KEY.' },
         { status: 401 }
       );
     }
