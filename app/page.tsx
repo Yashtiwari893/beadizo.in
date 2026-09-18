@@ -259,11 +259,9 @@ export default function HomePage() {
         <div className="container" style={{ width: '100%' }}>
           <div className="editorial-text-panel">
             <div className="editorial-doodle">
-              Little
-              <br />
-              Beads
-              <br />
-              Big Stories
+              <span className="doodle-part-1">Little Beads</span>
+              <span className="doodle-sep"> • </span>
+              <span className="doodle-part-2">Big Stories</span>
             </div>
             <h2>
               {settings?.editorial_headline || 'Jewellery\nThat Feels Like You'}
