@@ -9,80 +9,131 @@ async function callGroqAI(prompt: string): Promise<string> {
   const apiKey = process.env.GROQ_API_KEY?.trim();
   if (!apiKey) throw new Error('NO_API_KEY');
 
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
-      messages: [
-        {
-          role: 'system',
-          content:
-            'You are an expert e-commerce copywriter for Beadizo, a modern handcrafted jewellery brand known for anti-tarnish, waterproof, elegant accessories.',
-        },
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      temperature: 0.6,
-      max_tokens: 350,
-    }),
-  });
+  const models = [
+    'openai/gpt-oss-20b',
+    'qwen/qwen3.8-27b',
+    'groq/compound',
+    'llama-3.1-8b-instant',
+    'llama3-70b-8192',
+  ];
+  let lastError: Error | null = null;
 
-  if (!res.ok) {
-    const errData = await res.json().catch(() => ({}));
-    if (res.status === 401) throw new Error('INVALID_API_KEY');
-    if (res.status === 429) throw new Error('AI_RATE_LIMIT');
-    throw new Error(errData?.error?.message || `Groq returned status ${res.status}`);
+
+  for (const model of models) {
+    try {
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            {
+              role: 'system',
+              content:
+                'You are an expert e-commerce copywriter for Beadizo, a modern handcrafted jewellery brand known for anti-tarnish, waterproof, elegant accessories.',
+            },
+            {
+              role: 'user',
+              content: prompt,
+            },
+          ],
+          temperature: 0.6,
+          max_tokens: 350,
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        if (res.status === 401) throw new Error('INVALID_API_KEY');
+        if (res.status === 429) throw new Error('AI_RATE_LIMIT');
+        throw new Error(errData?.error?.message || `Groq returned status ${res.status}`);
+      }
+
+      const data = await res.json();
+      const text = data?.choices?.[0]?.message?.content;
+      if (typeof text === 'string' && text.trim().length > 0) return text;
+    } catch (err: any) {
+      if (err.message === 'INVALID_API_KEY' || err.message === 'AI_RATE_LIMIT') {
+        throw err;
+      }
+      lastError = err;
+    }
   }
 
-  const data = await res.json();
-  return data?.choices?.[0]?.message?.content || '';
+  throw lastError || new Error('Failed to generate with Groq.');
 }
+
 
 async function callGeminiAI(prompt: string): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) throw new Error('NO_API_KEY');
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.6,
-          maxOutputTokens: 350,
-        },
-      }),
-    }
-  );
+  const models = ['gemini-1.5-flash', 'gemini-2.0-flash'];
+  let lastError: Error | null = null;
 
-  if (!res.ok) {
-    const errData = await res.json().catch(() => ({}));
-    if (res.status === 400 || res.status === 403) throw new Error('INVALID_API_KEY');
-    if (res.status === 429) throw new Error('AI_RATE_LIMIT');
-    throw new Error(errData?.error?.message || `Gemini returned status ${res.status}`);
+  for (const model of models) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            systemInstruction: {
+              parts: [
+                {
+                  text: 'You are an expert e-commerce copywriter for Beadizo, a modern handcrafted jewellery brand known for anti-tarnish, waterproof, elegant accessories.',
+                },
+              ],
+            },
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.6,
+              maxOutputTokens: 450,
+            },
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        const errMsg = (errData?.error?.message || '').toLowerCase();
+        if (res.status === 400 || res.status === 403) {
+          if (errMsg.includes('api key') || errMsg.includes('key not valid') || errMsg.includes('permission')) {
+            throw new Error('INVALID_API_KEY');
+          }
+        }
+        if (res.status === 429) throw new Error('AI_RATE_LIMIT');
+        throw new Error(errData?.error?.message || `Gemini returned status ${res.status}`);
+      }
+
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (typeof text === 'string') return text;
+    } catch (err: any) {
+      if (err.message === 'INVALID_API_KEY' || err.message === 'AI_RATE_LIMIT') {
+        throw err;
+      }
+      lastError = err;
+    }
   }
 
-  const data = await res.json();
-  return data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  throw lastError || new Error('Failed to generate with Gemini.');
 }
 
 async function generateWithAI(prompt: string): Promise<string> {
-  if (process.env.GROQ_API_KEY?.trim()) {
-    return await callGroqAI(prompt);
-  }
   if (process.env.GEMINI_API_KEY?.trim()) {
     return await callGeminiAI(prompt);
   }
+  if (process.env.GROQ_API_KEY?.trim()) {
+    return await callGroqAI(prompt);
+  }
   throw new Error('NO_API_KEY');
 }
+
 
 export async function POST(request: NextRequest) {
   // 1. Authentication + CSRF protection
@@ -200,7 +251,7 @@ Example format:
       return NextResponse.json(
         {
           error:
-            'AI API key is not configured. Please set GROQ_API_KEY in .env.local to enable AI Assist, or write manually.',
+            'AI API key is not configured. Please set GEMINI_API_KEY in .env.local to enable AI Assist, or write manually.',
         },
         { status: 503 }
       );
@@ -208,7 +259,7 @@ Example format:
 
     if (err?.message === 'INVALID_API_KEY') {
       return NextResponse.json(
-        { error: 'Invalid AI API key in .env.local. Please verify your GROQ_API_KEY.' },
+        { error: 'Invalid Gemini API key in .env.local. Please verify your GEMINI_API_KEY.' },
         { status: 401 }
       );
     }
