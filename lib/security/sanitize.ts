@@ -35,11 +35,12 @@ export function toBoolean(value: unknown, fallback = false): boolean {
   return fallback;
 }
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function isUuid(value: unknown): value is string {
   return typeof value === 'string' && value.length === 36 && UUID_RE.test(value);
 }
+
 
 /**
  * Normalises a slug. Linear-time (no nested quantifiers), length-capped,

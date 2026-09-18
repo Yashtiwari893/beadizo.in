@@ -31,16 +31,25 @@ export interface Validated<T> {
   record: T;
 }
 
-/** An id is an update target only if it is a genuine UUID. */
+export function isValidRecordId(id: unknown): boolean {
+  if (typeof id === 'number') {
+    return Number.isInteger(id) && id > 0;
+  }
+  if (typeof id !== 'string') return false;
+  const trimmed = id.trim();
+  if (!trimmed || trimmed.length > 128) return false;
+  return isUuid(trimmed) || /^[a-zA-Z0-9_-]+$/.test(trimmed);
+}
+
+/** An id is an update target if it is a valid record id. */
 function extractId(payload: any): string | undefined {
   const id = payload?.id;
   if (id === undefined || id === null || id === '') return undefined;
-  if (!isUuid(id)) {
-    // Locally-generated ids ("local-123", "cat-456", "insta-789") are not database rows.
-    if (typeof id === 'string' && /^(local|cat|hero|offer|insta)-/.test(id)) return undefined;
+  if (typeof id === 'string' && /^(local|cat|hero|offer|insta|prod)-/.test(id)) return undefined;
+  if (!isValidRecordId(id)) {
     fail('Invalid record id.');
   }
-  return id as string;
+  return String(id).trim();
 }
 
 // ---------------------------------------------------------------------------
@@ -250,8 +259,8 @@ export function validateSiteSettings(payload: any): Record<string, unknown> {
 /** Validates a `{ id }` delete payload. */
 export function validateDeleteId(payload: any): string {
   const id = payload?.id;
-  if (!isUuid(id)) fail('A valid record id is required.');
-  return id as string;
+  if (!isValidRecordId(id)) fail('A valid record id is required.');
+  return String(id).trim();
 }
 
 /** Validates a `{ ids: string[] }` bulk delete payload. */
@@ -264,17 +273,15 @@ export function validateDeleteIds(payload: any): string[] {
     fail('Cannot delete more than 100 records in a single batch.');
   }
   const validIds: string[] = [];
-  for (const id of ids) {
-    if (
-      typeof id !== 'string' ||
-      (!isUuid(id) && !/^(local|cat|hero|offer|insta|prod)-/.test(id) && !/^\d+$/.test(id))
-    ) {
-      fail(`Invalid record id: ${id}`);
+  for (const raw of ids) {
+    if (!isValidRecordId(raw)) {
+      fail(`Invalid record id: ${raw}`);
     }
-    validIds.push(id);
+    validIds.push(String(raw).trim());
   }
   return validIds;
 }
+
 
 
 // ---------------------------------------------------------------------------
