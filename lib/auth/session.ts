@@ -124,10 +124,13 @@ export function isAuthenticated(request: NextRequest): boolean {
  * same-site-but-wrong-origin and null-origin requests too.
  */
 export function hasValidOrigin(request: NextRequest): boolean {
-  const origin = request.headers.get('origin');
+  let source = request.headers.get('origin');
+  if (!source && (request.method === 'GET' || request.method === 'HEAD')) {
+    source = request.headers.get('referer');
+  }
 
-  // Same-origin fetch() from our own pages always sends Origin.
-  if (!origin) return false;
+  // Same-origin fetch() sends Origin on mutations, and Referer on GET/HEAD.
+  if (!source) return false;
 
   let host = request.headers.get('host');
   // Respect the proxy host when deployed behind Vercel/NGINX.
@@ -136,7 +139,7 @@ export function hasValidOrigin(request: NextRequest): boolean {
   if (!host) return false;
 
   try {
-    return new URL(origin).host === host;
+    return new URL(source).host === host;
   } catch {
     return false;
   }
