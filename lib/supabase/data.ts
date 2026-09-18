@@ -839,3 +839,25 @@ export async function deleteInstagramPost(id: string): Promise<boolean> {
   return true;
 }
 
+export async function generateProductAiContent(
+  type: 'description' | 'features',
+  title: string,
+  slug?: string,
+  existingDescription?: string
+): Promise<string | string[]> {
+  const res = await fetch('/api/admin/ai-generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type, title, slug, existingDescription }),
+    credentials: 'same-origin',
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to generate AI content.');
+  }
+
+  return data.result;
+}
+
+

@@ -3,9 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Loader2, Plus, X } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Plus, X, Sparkles, AlertCircle } from 'lucide-react';
 import MultiImageUploader from './MultiImageUploader';
-import { getCategories, saveProduct } from '@/lib/supabase/data';
+import { getCategories, saveProduct, generateProductAiContent } from '@/lib/supabase/data';
 import { DbProduct, DbCategory } from '@/lib/supabase/types';
 
 interface ProductFormProps {
@@ -34,6 +34,55 @@ export default function ProductForm({ initialData, isEdit = false }: ProductForm
     initialData?.features || ['100% Anti-Tarnish', 'Waterproof & Sweatproof', 'Hypoallergenic', 'Free Pan-India Delivery']
   );
   const [newFeature, setNewFeature] = useState('');
+
+  // AI Assist State
+  const [generatingDesc, setGeneratingDesc] = useState(false);
+  const [descAiError, setDescAiError] = useState<string | null>(null);
+  const [generatingFeatures, setGeneratingFeatures] = useState(false);
+  const [featuresAiError, setFeaturesAiError] = useState<string | null>(null);
+
+  const handleGenerateDescription = async () => {
+    if (!title.trim()) {
+      setDescAiError('Please enter a product title first so AI has context.');
+      return;
+    }
+
+    setGeneratingDesc(true);
+    setDescAiError(null);
+    try {
+      const result = await generateProductAiContent('description', title.trim(), slug.trim(), description.trim());
+      if (typeof result === 'string') {
+        setDescription(result);
+      }
+    } catch (err: any) {
+      setDescAiError(err?.message || 'Could not generate description right now. You can write manually.');
+    } finally {
+      setGeneratingDesc(false);
+    }
+  };
+
+  const handleSuggestFeatures = async () => {
+    if (!title.trim()) {
+      setFeaturesAiError('Please enter a product title first so AI has context.');
+      return;
+    }
+
+    setGeneratingFeatures(true);
+    setFeaturesAiError(null);
+    try {
+      const result = await generateProductAiContent('features', title.trim(), slug.trim());
+      if (Array.isArray(result)) {
+        const newUnique = result.filter((tag) => !features.includes(tag));
+        if (newUnique.length > 0) {
+          setFeatures((prev) => [...prev, ...newUnique]);
+        }
+      }
+    } catch (err: any) {
+      setFeaturesAiError(err?.message || 'Could not suggest features right now. You can add them manually.');
+    } finally {
+      setGeneratingFeatures(false);
+    }
+  };
 
   useEffect(() => {
     async function loadCats() {
@@ -240,14 +289,82 @@ export default function ProductForm({ initialData, isEdit = false }: ProductForm
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#DFBDB5', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Description
-              </label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#DFBDB5', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Description
+                </label>
+
+                <button
+                  type="button"
+                  disabled={generatingDesc || !title.trim()}
+                  onClick={handleGenerateDescription}
+                  title={!title.trim() ? 'Enter a Product Title first' : 'Auto-generate compelling SEO description with AI'}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '4px 12px',
+                    borderRadius: '6px',
+                    background: !title.trim()
+                      ? 'rgba(255,255,255,0.04)'
+                      : 'linear-gradient(135deg, rgba(223, 189, 181, 0.22) 0%, rgba(184, 134, 11, 0.18) 100%)',
+                    border: !title.trim() ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(223, 189, 181, 0.4)',
+                    color: !title.trim() ? '#6B6B78' : '#DFBDB5',
+                    fontSize: '0.76rem',
+                    fontWeight: 600,
+                    cursor: generatingDesc || !title.trim() ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  {generatingDesc ? (
+                    <>
+                      <Loader2 size={13} className="lucide-spin" />
+                      <span>Generating description...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={13} />
+                      <span>{description.trim() ? 'Regenerate with AI' : 'Generate with AI'}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {descAiError && (
+                <div
+                  style={{
+                    background: 'rgba(239, 68, 68, 0.12)',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    color: '#FCA5A5',
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    fontSize: '0.78rem',
+                    marginBottom: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '8px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <AlertCircle size={14} color="#EF4444" style={{ flexShrink: 0 }} />
+                    <span>{descAiError}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setDescAiError(null)}
+                    style={{ background: 'none', border: 'none', color: '#FCA5A5', cursor: 'pointer', padding: 0 }}
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+              )}
+
               <textarea
                 rows={4}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Detailed description of craftsmanship, materials, beads, and sizing..."
+                placeholder="Detailed description of craftsmanship, materials, beads, and sizing... (write manually or click Generate with AI)"
                 style={{
                   width: '100%',
                   background: '#1F1F26',
@@ -265,9 +382,76 @@ export default function ProductForm({ initialData, isEdit = false }: ProductForm
 
           {/* Features & Specs Tags */}
           <div style={{ background: '#141419', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '24px' }}>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#DFBDB5', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Product Features & Badges
-            </label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#DFBDB5', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Product Features & Badges
+              </label>
+
+              <button
+                type="button"
+                disabled={generatingFeatures || !title.trim()}
+                onClick={handleSuggestFeatures}
+                title={!title.trim() ? 'Enter a Product Title first' : 'AI will suggest relevant badge tags'}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '4px 12px',
+                  borderRadius: '6px',
+                  background: !title.trim()
+                    ? 'rgba(255,255,255,0.04)'
+                    : 'linear-gradient(135deg, rgba(223, 189, 181, 0.22) 0%, rgba(184, 134, 11, 0.18) 100%)',
+                  border: !title.trim() ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(223, 189, 181, 0.4)',
+                  color: !title.trim() ? '#6B6B78' : '#DFBDB5',
+                  fontSize: '0.76rem',
+                  fontWeight: 600,
+                  cursor: generatingFeatures || !title.trim() ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {generatingFeatures ? (
+                  <>
+                    <Loader2 size={13} className="lucide-spin" />
+                    <span>Suggesting tags...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={13} />
+                    <span>Suggest with AI</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {featuresAiError && (
+              <div
+                style={{
+                  background: 'rgba(239, 68, 68, 0.12)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  color: '#FCA5A5',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  fontSize: '0.78rem',
+                  marginBottom: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '8px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <AlertCircle size={14} color="#EF4444" style={{ flexShrink: 0 }} />
+                  <span>{featuresAiError}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFeaturesAiError(null)}
+                  style={{ background: 'none', border: 'none', color: '#FCA5A5', cursor: 'pointer', padding: 0 }}
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            )}
 
             <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
               <input
