@@ -13,11 +13,13 @@ import {
   CheckCircle2,
   X,
   Sparkles,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { InstagramIcon } from '@/components/icons/InstagramIcon';
 import { getInstagramPosts, saveInstagramPost, deleteInstagramPost } from '@/lib/supabase/data';
 import { DbInstagramPost } from '@/lib/supabase/types';
 import { uploadMedia } from '@/lib/supabase/storage';
+import MediaLibraryPicker from '@/components/admin/MediaLibraryPicker';
 
 export default function AdminInstagramPage() {
   const [posts, setPosts] = useState<DbInstagramPost[]>([]);
@@ -26,6 +28,8 @@ export default function AdminInstagramPage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
+
 
   const loadData = async () => {
     setLoading(true);
@@ -560,30 +564,53 @@ export default function AdminInstagramPage() {
                   </div>
 
                   <div style={{ flex: 1 }}>
-                    <label
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        padding: '8px 14px',
-                        background: 'rgba(255,255,255,0.08)',
-                        borderRadius: '4px',
-                        fontSize: '0.8rem',
-                        cursor: uploading ? 'wait' : 'pointer',
-                        color: '#EDEDED',
-                        fontWeight: 600,
-                      }}
-                    >
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp,image/gif"
-                        disabled={uploading}
-                        onChange={handleImageUpload}
-                        style={{ display: 'none' }}
-                      />
-                      {uploading ? <Loader2 size={14} className="lucide-spin" /> : <Upload size={14} />}
-                      <span>{uploading ? 'Uploading...' : 'Upload Image'}</span>
-                    </label>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <label
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '8px 14px',
+                          background: 'rgba(255,255,255,0.08)',
+                          borderRadius: '4px',
+                          fontSize: '0.8rem',
+                          cursor: uploading ? 'wait' : 'pointer',
+                          color: '#EDEDED',
+                          fontWeight: 600,
+                        }}
+                      >
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          disabled={uploading}
+                          onChange={handleImageUpload}
+                          style={{ display: 'none' }}
+                        />
+                        {uploading ? <Loader2 size={14} className="lucide-spin" /> : <Upload size={14} />}
+                        <span>{uploading ? 'Uploading...' : 'Upload Image'}</span>
+                      </label>
+
+                      <button
+                        type="button"
+                        onClick={() => setMediaPickerOpen(true)}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '8px 14px',
+                          background: 'rgba(223, 189, 181, 0.12)',
+                          border: '1px solid rgba(223, 189, 181, 0.3)',
+                          borderRadius: '4px',
+                          fontSize: '0.8rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          color: '#DFBDB5',
+                        }}
+                      >
+                        <ImageIcon size={14} />
+                        <span>Choose from Library</span>
+                      </button>
+                    </div>
 
                     <input
                       type="text"
@@ -754,6 +781,15 @@ export default function AdminInstagramPage() {
           </div>
         </div>
       )}
+
+      <MediaLibraryPicker
+        isOpen={mediaPickerOpen}
+        onClose={() => setMediaPickerOpen(false)}
+        defaultFolder="instagram"
+        aspectRatio={4 / 5}
+        title="Select Instagram Feed Image"
+        onSelect={(url) => setEditingPost((prev) => (prev ? { ...prev, image_url: url } : null))}
+      />
     </div>
   );
 }

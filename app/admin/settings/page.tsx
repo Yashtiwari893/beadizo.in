@@ -8,11 +8,13 @@ import {
   Phone,
   Megaphone,
   Sparkles,
-  Upload
+  Upload,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { getSiteSettings, saveSiteSettings } from '@/lib/supabase/data';
 import { DbSiteSettings } from '@/lib/supabase/types';
 import { uploadMedia } from '@/lib/supabase/storage';
+import MediaLibraryPicker from '@/components/admin/MediaLibraryPicker';
 
 export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<DbSiteSettings | null>(null);
@@ -20,6 +22,8 @@ export default function AdminSettingsPage() {
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [uploadingEditorial, setUploadingEditorial] = useState(false);
   const [uploadingCraft, setUploadingCraft] = useState(false);
+  const [mediaPickerTarget, setMediaPickerTarget] = useState<'editorial_image_url' | 'craft_image_url' | null>(null);
+
 
   useEffect(() => {
     async function load() {
@@ -348,31 +352,55 @@ export default function AdminSettingsPage() {
                       fontSize: '0.85rem',
                     }}
                   />
-                  <label
-                    style={{
-                      padding: '10px 14px',
-                      background: '#2A2A35',
-                      color: '#DFBDB5',
-                      borderRadius: '6px',
-                      fontSize: '0.82rem',
-                      fontWeight: 600,
-                      cursor: uploadingEditorial ? 'wait' : 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {uploadingEditorial ? <Loader2 size={14} className="lucide-spin" /> : <Upload size={14} />}
-                    <span>{uploadingEditorial ? 'Uploading...' : 'Upload'}</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => e.target.files?.[0] && handleUploadImage('editorial_image_url', e.target.files[0])}
-                      disabled={uploadingEditorial}
-                      style={{ display: 'none' }}
-                    />
-                  </label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <label
+                      style={{
+                        padding: '10px 14px',
+                        background: '#2A2A35',
+                        color: '#DFBDB5',
+                        borderRadius: '6px',
+                        fontSize: '0.82rem',
+                        fontWeight: 600,
+                        cursor: uploadingEditorial ? 'wait' : 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {uploadingEditorial ? <Loader2 size={14} className="lucide-spin" /> : <Upload size={14} />}
+                      <span>{uploadingEditorial ? 'Uploading...' : 'Upload'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => e.target.files?.[0] && handleUploadImage('editorial_image_url', e.target.files[0])}
+                        disabled={uploadingEditorial}
+                        style={{ display: 'none' }}
+                      />
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={() => setMediaPickerTarget('editorial_image_url')}
+                      style={{
+                        padding: '10px 14px',
+                        background: 'rgba(223, 189, 181, 0.12)',
+                        border: '1px solid rgba(223, 189, 181, 0.3)',
+                        color: '#DFBDB5',
+                        borderRadius: '6px',
+                        fontSize: '0.82rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <ImageIcon size={14} />
+                      <span>From Library</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -472,31 +500,55 @@ export default function AdminSettingsPage() {
                       fontSize: '0.85rem',
                     }}
                   />
-                  <label
-                    style={{
-                      padding: '10px 14px',
-                      background: '#2A2A35',
-                      color: '#DFBDB5',
-                      borderRadius: '6px',
-                      fontSize: '0.82rem',
-                      fontWeight: 600,
-                      cursor: uploadingCraft ? 'wait' : 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {uploadingCraft ? <Loader2 size={14} className="lucide-spin" /> : <Upload size={14} />}
-                    <span>{uploadingCraft ? 'Uploading...' : 'Upload'}</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => e.target.files?.[0] && handleUploadImage('craft_image_url', e.target.files[0])}
-                      disabled={uploadingCraft}
-                      style={{ display: 'none' }}
-                    />
-                  </label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <label
+                      style={{
+                        padding: '10px 14px',
+                        background: '#2A2A35',
+                        color: '#DFBDB5',
+                        borderRadius: '6px',
+                        fontSize: '0.82rem',
+                        fontWeight: 600,
+                        cursor: uploadingCraft ? 'wait' : 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {uploadingCraft ? <Loader2 size={14} className="lucide-spin" /> : <Upload size={14} />}
+                      <span>{uploadingCraft ? 'Uploading...' : 'Upload'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => e.target.files?.[0] && handleUploadImage('craft_image_url', e.target.files[0])}
+                        disabled={uploadingCraft}
+                        style={{ display: 'none' }}
+                      />
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={() => setMediaPickerTarget('craft_image_url')}
+                      style={{
+                        padding: '10px 14px',
+                        background: 'rgba(223, 189, 181, 0.12)',
+                        border: '1px solid rgba(223, 189, 181, 0.3)',
+                        color: '#DFBDB5',
+                        borderRadius: '6px',
+                        fontSize: '0.82rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <ImageIcon size={14} />
+                      <span>From Library</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -517,6 +569,23 @@ export default function AdminSettingsPage() {
           </div>
         </div>
       </form>
+
+      <MediaLibraryPicker
+        isOpen={mediaPickerTarget !== null}
+        onClose={() => setMediaPickerTarget(null)}
+        defaultFolder="settings"
+        title={
+          mediaPickerTarget === 'editorial_image_url'
+            ? 'Select Editorial Story Photo'
+            : 'Select Craft Story Banner Photo'
+        }
+        onSelect={(url) => {
+          if (mediaPickerTarget) {
+            setSettings((prev) => (prev ? { ...prev, [mediaPickerTarget]: url } : null));
+            setMediaPickerTarget(null);
+          }
+        }}
+      />
     </div>
   );
 }

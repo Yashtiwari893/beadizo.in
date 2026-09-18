@@ -12,11 +12,13 @@ import {
   Tag,
   ToggleLeft,
   ToggleRight,
-  Gift
+  Gift,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { getPopupOffers, savePopupOffer, deletePopupOffer } from '@/lib/supabase/data';
 import { DbPopupOffer } from '@/lib/supabase/types';
 import { uploadMedia } from '@/lib/supabase/storage';
+import MediaLibraryPicker from '@/components/admin/MediaLibraryPicker';
 
 export default function AdminOffersPage() {
   const [offers, setOffers] = useState<DbPopupOffer[]>([]);
@@ -25,6 +27,8 @@ export default function AdminOffersPage() {
   const [uploading, setUploading] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
+
 
   const loadOffers = async () => {
     setLoading(true);
@@ -459,25 +463,49 @@ export default function AdminOffersPage() {
                       fontSize: '0.85rem',
                     }}
                   />
-                  <label
-                    style={{
-                      padding: '10px 16px',
-                      background: '#2A2A35',
-                      color: '#DFBDB5',
-                      borderRadius: '6px',
-                      fontSize: '0.82rem',
-                      fontWeight: 600,
-                      cursor: uploading ? 'wait' : 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {uploading ? <Loader2 size={14} className="lucide-spin" /> : <Upload size={14} />}
-                    <span>{uploading ? 'Uploading...' : 'Upload'}</span>
-                    <input type="file" accept="image/*" onChange={handleUploadImage} disabled={uploading} style={{ display: 'none' }} />
-                  </label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <label
+                      style={{
+                        padding: '10px 16px',
+                        background: '#2A2A35',
+                        color: '#DFBDB5',
+                        borderRadius: '6px',
+                        fontSize: '0.82rem',
+                        fontWeight: 600,
+                        cursor: uploading ? 'wait' : 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {uploading ? <Loader2 size={14} className="lucide-spin" /> : <Upload size={14} />}
+                      <span>{uploading ? 'Uploading...' : 'Upload'}</span>
+                      <input type="file" accept="image/*" onChange={handleUploadImage} disabled={uploading} style={{ display: 'none' }} />
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={() => setMediaPickerOpen(true)}
+                      style={{
+                        padding: '10px 14px',
+                        background: 'rgba(223, 189, 181, 0.12)',
+                        border: '1px solid rgba(223, 189, 181, 0.3)',
+                        color: '#DFBDB5',
+                        borderRadius: '6px',
+                        fontSize: '0.82rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <ImageIcon size={14} />
+                      <span>From Library</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -645,6 +673,14 @@ export default function AdminOffersPage() {
           <div style={{ color: '#A6A6B2', padding: '40px', textAlign: 'center' }}>Select or create an offer to edit.</div>
         )}
       </div>
+
+      <MediaLibraryPicker
+        isOpen={mediaPickerOpen}
+        onClose={() => setMediaPickerOpen(false)}
+        defaultFolder="offers"
+        title="Select Promotional Offer Creative"
+        onSelect={(url) => setActiveOffer((prev) => (prev ? { ...prev, image_url: url } : null))}
+      />
     </div>
   );
 }

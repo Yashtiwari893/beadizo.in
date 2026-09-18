@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Upload, X, Star, Link as LinkIcon, Loader2, AlertCircle } from 'lucide-react';
-import { uploadMedia, deleteMedia, BUCKET_NAME } from '@/lib/supabase/storage';
+import { Upload, X, Star, Link as LinkIcon, Loader2, AlertCircle, Image as ImageIcon } from 'lucide-react';
+import { uploadMedia } from '@/lib/supabase/storage';
 import { safeImageUrl } from '@/lib/security/sanitize';
+import MediaLibraryPicker from '@/components/admin/MediaLibraryPicker';
 
 interface MultiImageUploaderProps {
   images: string[];
@@ -20,9 +21,11 @@ export default function MultiImageUploader({
   maxImages = 6,
 }: MultiImageUploaderProps) {
   const [uploading, setUploading] = useState(false);
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [urlInput, setUrlInput] = useState('');
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+
 
   const handleFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setValidationError(null);
@@ -114,17 +117,9 @@ export default function MultiImageUploader({
     setShowUrlInput(false);
   };
 
-  const handleRemove = async (index: number) => {
-    const removedUrl = images[index];
+  const handleRemove = (index: number) => {
     const next = images.filter((_, i) => i !== index);
     onChange(next);
-    if (removedUrl && removedUrl.includes(BUCKET_NAME)) {
-      try {
-        await deleteMedia(removedUrl);
-      } catch {
-        // Safe silence
-      }
-    }
   };
 
   const handleSetPrimary = (index: number) => {
@@ -140,13 +135,34 @@ export default function MultiImageUploader({
         <label style={{ fontSize: '0.82rem', fontWeight: 600, color: '#DFBDB5', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           Product Images ({images.length}/{maxImages})
         </label>
-        <button
-          type="button"
-          onClick={() => setShowUrlInput(!showUrlInput)}
-          style={{ background: 'none', border: 'none', color: '#DFBDB5', fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-        >
-          <LinkIcon size={12} /> {showUrlInput ? 'Hide URL input' : 'Add image via URL'}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            type="button"
+            onClick={() => setMediaPickerOpen(true)}
+            style={{
+              background: 'rgba(223, 189, 181, 0.12)',
+              border: '1px solid rgba(223, 189, 181, 0.3)',
+              color: '#DFBDB5',
+              padding: '4px 10px',
+              borderRadius: '4px',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+            }}
+          >
+            <ImageIcon size={13} /> Choose from Library
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowUrlInput(!showUrlInput)}
+            style={{ background: 'none', border: 'none', color: '#A6A6B2', fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+          >
+            <LinkIcon size={12} /> {showUrlInput ? 'Hide URL input' : 'Add via URL'}
+          </button>
+        </div>
       </div>
 
       {/* Validation Error Alert Banner */}
@@ -324,52 +340,103 @@ export default function MultiImageUploader({
           </div>
         ))}
 
-        {/* Upload Drop Button */}
+        {/* Upload Drop Button & Library Button */}
         {images.length < maxImages && (
-          <label
-            style={{
-              aspectRatio: '1/1',
-              borderRadius: '6px',
-              border: '2px dashed rgba(223, 189, 181, 0.35)',
-              background: 'rgba(223, 189, 181, 0.03)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: uploading ? 'wait' : 'pointer',
-              color: '#A6A6B2',
-              transition: 'border-color 0.2s ease',
-              padding: '8px',
-              textAlign: 'center',
-            }}
-          >
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              multiple
-              disabled={uploading}
-              onChange={handleFiles}
-              style={{ display: 'none' }}
-            />
-            {uploading ? (
-              <>
-                <Loader2 size={20} className="lucide-spin" style={{ color: '#DFBDB5', animation: 'spin 1s linear infinite' }} />
-                <span style={{ fontSize: '0.68rem', marginTop: '6px', color: '#DFBDB5' }}>Uploading...</span>
-              </>
-            ) : (
-              <>
-                <Upload size={20} style={{ color: '#DFBDB5', marginBottom: '6px' }} />
-                <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#EDEDED' }}>Upload Photo</span>
-                <span style={{ fontSize: '0.65rem', color: '#72727D' }}>Max 5MB (JPG, PNG, WEBP, GIF)</span>
-              </>
-            )}
-          </label>
+          <>
+            <label
+              style={{
+                aspectRatio: '1/1',
+                borderRadius: '6px',
+                border: '2px dashed rgba(223, 189, 181, 0.35)',
+                background: 'rgba(223, 189, 181, 0.03)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: uploading ? 'wait' : 'pointer',
+                color: '#A6A6B2',
+                transition: 'border-color 0.2s ease',
+                padding: '8px',
+                textAlign: 'center',
+              }}
+            >
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                multiple
+                disabled={uploading}
+                onChange={handleFiles}
+                style={{ display: 'none' }}
+              />
+              {uploading ? (
+                <>
+                  <Loader2 size={20} className="lucide-spin" style={{ color: '#DFBDB5', animation: 'spin 1s linear infinite' }} />
+                  <span style={{ fontSize: '0.68rem', marginTop: '6px', color: '#DFBDB5' }}>Uploading...</span>
+                </>
+              ) : (
+                <>
+                  <Upload size={20} style={{ color: '#DFBDB5', marginBottom: '6px' }} />
+                  <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#EDEDED' }}>Upload Photo</span>
+                  <span style={{ fontSize: '0.65rem', color: '#72727D' }}>Max 5MB</span>
+                </>
+              )}
+            </label>
+
+            <button
+              type="button"
+              onClick={() => setMediaPickerOpen(true)}
+              style={{
+                aspectRatio: '1/1',
+                borderRadius: '6px',
+                border: '1px solid rgba(223, 189, 181, 0.25)',
+                background: 'rgba(223, 189, 181, 0.05)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: '#DFBDB5',
+                padding: '8px',
+                textAlign: 'center',
+                transition: 'background 0.15s ease',
+              }}
+            >
+              <ImageIcon size={20} style={{ marginBottom: '6px' }} />
+              <span style={{ fontSize: '0.72rem', fontWeight: 600 }}>From Library</span>
+              <span style={{ fontSize: '0.65rem', color: '#72727D' }}>Select existing</span>
+            </button>
+          </>
         )}
       </div>
 
       <p style={{ fontSize: '0.72rem', color: '#72727D', margin: 0 }}>
         The first image is used as the primary catalog thumbnail. Click the star icon to set any photo as main. Maximum 5MB per file.
       </p>
+
+      {/* Media Library Picker Modal */}
+      <MediaLibraryPicker
+        isOpen={mediaPickerOpen}
+        onClose={() => setMediaPickerOpen(false)}
+        multiSelect={true}
+        defaultFolder="products"
+        aspectRatio={1}
+        title="Select Product Images"
+        onSelectMultiple={(newUrls) => {
+          const combined = [...images];
+          for (const url of newUrls) {
+            if (!combined.includes(url) && combined.length < maxImages) {
+              combined.push(url);
+            }
+          }
+          onChange(combined);
+        }}
+        onSelect={(url) => {
+          if (!images.includes(url) && images.length < maxImages) {
+            onChange([...images, url]);
+          }
+        }}
+      />
     </div>
   );
 }
+

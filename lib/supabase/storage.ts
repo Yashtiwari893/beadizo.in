@@ -62,3 +62,85 @@ export async function deleteMedia(publicUrl: string): Promise<boolean> {
     return false;
   }
 }
+
+export interface MediaItem {
+  id: string;
+  name: string;
+  folder: string;
+  path: string;
+  url: string;
+  size: number;
+  mimetype: string;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+export interface UsageScanResult {
+  inUse: boolean;
+  usageCount: number;
+  usages: Array<{
+    type: 'product' | 'category' | 'hero' | 'offer' | 'instagram' | 'settings';
+    title: string;
+    location: string;
+  }>;
+}
+
+export async function fetchMediaLibrary(folder?: string): Promise<MediaItem[]> {
+  const url = folder ? `/api/admin/media?folder=${encodeURIComponent(folder)}` : '/api/admin/media';
+  const res = await fetch(url, {
+    method: 'GET',
+    credentials: 'same-origin',
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to fetch media library.');
+  }
+
+  const data = await res.json();
+  return data.media || [];
+}
+
+export async function checkMediaUsage(publicUrl: string): Promise<UsageScanResult> {
+  const res = await fetch(`/api/admin/media/usage?url=${encodeURIComponent(publicUrl)}`, {
+    method: 'GET',
+    credentials: 'same-origin',
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to check media usage.');
+  }
+
+  return await res.json();
+}
+
+export async function deleteMediaWithSafety(
+  publicUrl: string,
+  force = false
+): Promise<{ success: boolean; inUse?: boolean; usages?: UsageScanResult['usages']; error?: string }> {
+  const res = await fetch('/api/admin/media', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url: publicUrl, force }),
+    credentials: 'same-origin',
+  });
+
+  const data = await res.json().catch(() => ({}));
+
+  if (res.status === 409) {
+    return {
+      success: false,
+      inUse: true,
+      usages: data.usages || [],
+      error: data.error || 'This image is currently in use.',
+    };
+  }
+
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to delete image.');
+  }
+
+  return { success: true };
+}
+

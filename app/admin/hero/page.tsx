@@ -1,16 +1,19 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Save, Upload, Loader2, Eye, CheckCircle2 } from 'lucide-react';
+import { Save, Upload, Loader2, Eye, CheckCircle2, Image as ImageIcon } from 'lucide-react';
 import { getHeroSlides, saveHeroSlide } from '@/lib/supabase/data';
 import { DbHeroSlide } from '@/lib/supabase/types';
 import { uploadMedia } from '@/lib/supabase/storage';
+import MediaLibraryPicker from '@/components/admin/MediaLibraryPicker';
 
 export default function AdminHeroPage() {
   const [activeSlide, setActiveSlide] = useState<DbHeroSlide | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
+
 
   useEffect(() => {
     async function load() {
@@ -131,23 +134,46 @@ export default function AdminHeroPage() {
                 <img src={activeSlide.image_url} alt="Hero Banner" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
               <div style={{ flex: 1 }}>
-                <label
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '8px 14px',
-                    background: 'rgba(255,255,255,0.08)',
-                    borderRadius: '4px',
-                    fontSize: '0.8rem',
-                    cursor: uploading ? 'wait' : 'pointer',
-                    color: '#EDEDED',
-                  }}
-                >
-                  <input type="file" accept="image/*" disabled={uploading} onChange={handleUploadBg} style={{ display: 'none' }} />
-                  {uploading ? <Loader2 size={14} className="lucide-spin" /> : <Upload size={14} />}
-                  <span>{uploading ? 'Uploading to Supabase...' : 'Upload New Hero Photo'}</span>
-                </label>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <label
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '8px 14px',
+                      background: 'rgba(255,255,255,0.08)',
+                      borderRadius: '4px',
+                      fontSize: '0.8rem',
+                      cursor: uploading ? 'wait' : 'pointer',
+                      color: '#EDEDED',
+                    }}
+                  >
+                    <input type="file" accept="image/*" disabled={uploading} onChange={handleUploadBg} style={{ display: 'none' }} />
+                    {uploading ? <Loader2 size={14} className="lucide-spin" /> : <Upload size={14} />}
+                    <span>{uploading ? 'Uploading to Supabase...' : 'Upload New Photo'}</span>
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={() => setMediaPickerOpen(true)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '8px 14px',
+                      background: 'rgba(223, 189, 181, 0.12)',
+                      border: '1px solid rgba(223, 189, 181, 0.3)',
+                      borderRadius: '4px',
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      color: '#DFBDB5',
+                    }}
+                  >
+                    <ImageIcon size={14} />
+                    <span>Choose from Library</span>
+                  </button>
+                </div>
                 <input
                   type="text"
                   value={activeSlide.image_url}
@@ -432,6 +458,15 @@ export default function AdminHeroPage() {
           </div>
         </div>
       </div>
+
+      <MediaLibraryPicker
+        isOpen={mediaPickerOpen}
+        onClose={() => setMediaPickerOpen(false)}
+        defaultFolder="hero"
+        aspectRatio={16 / 9}
+        title="Select Hero Banner Image"
+        onSelect={(url) => setActiveSlide((prev) => (prev ? { ...prev, image_url: url } : null))}
+      />
     </div>
   );
 }

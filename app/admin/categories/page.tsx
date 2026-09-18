@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Plus, Edit2, Trash2, Upload, Loader2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Upload, Loader2, Image as ImageIcon } from 'lucide-react';
 import { getCategories, saveCategory, deleteCategory } from '@/lib/supabase/data';
 import { DbCategory } from '@/lib/supabase/types';
 import { uploadMedia } from '@/lib/supabase/storage';
+import MediaLibraryPicker from '@/components/admin/MediaLibraryPicker';
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<DbCategory[]>([]);
@@ -12,6 +13,8 @@ export default function AdminCategoriesPage() {
   const [editingCat, setEditingCat] = useState<Partial<DbCategory> | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
+
 
   const loadData = async () => {
     setLoading(true);
@@ -310,23 +313,46 @@ export default function AdminCategoriesPage() {
                     />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <label
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        padding: '7px 12px',
-                        background: 'rgba(255,255,255,0.08)',
-                        borderRadius: '4px',
-                        fontSize: '0.78rem',
-                        cursor: uploading ? 'wait' : 'pointer',
-                        color: '#EDEDED',
-                      }}
-                    >
-                      <input type="file" accept="image/*" disabled={uploading} onChange={handleImageUpload} style={{ display: 'none' }} />
-                      {uploading ? <Loader2 size={13} className="lucide-spin" /> : <Upload size={13} />}
-                      <span>{uploading ? 'Uploading...' : 'Upload Image'}</span>
-                    </label>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <label
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '7px 12px',
+                          background: 'rgba(255,255,255,0.08)',
+                          borderRadius: '4px',
+                          fontSize: '0.78rem',
+                          cursor: uploading ? 'wait' : 'pointer',
+                          color: '#EDEDED',
+                        }}
+                      >
+                        <input type="file" accept="image/*" disabled={uploading} onChange={handleImageUpload} style={{ display: 'none' }} />
+                        {uploading ? <Loader2 size={13} className="lucide-spin" /> : <Upload size={13} />}
+                        <span>{uploading ? 'Uploading...' : 'Upload Image'}</span>
+                      </label>
+
+                      <button
+                        type="button"
+                        onClick={() => setMediaPickerOpen(true)}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '7px 12px',
+                          background: 'rgba(223, 189, 181, 0.12)',
+                          border: '1px solid rgba(223, 189, 181, 0.3)',
+                          borderRadius: '4px',
+                          fontSize: '0.78rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          color: '#DFBDB5',
+                        }}
+                      >
+                        <ImageIcon size={13} />
+                        <span>Choose from Library</span>
+                      </button>
+                    </div>
                     <input
                       type="text"
                       value={editingCat.image_url || ''}
@@ -398,6 +424,15 @@ export default function AdminCategoriesPage() {
           </div>
         </div>
       )}
+
+      <MediaLibraryPicker
+        isOpen={mediaPickerOpen}
+        onClose={() => setMediaPickerOpen(false)}
+        defaultFolder="categories"
+        aspectRatio={1}
+        title="Select Category Thumbnail"
+        onSelect={(url) => setEditingCat((prev) => (prev ? { ...prev, image_url: url } : null))}
+      />
     </div>
   );
 }
