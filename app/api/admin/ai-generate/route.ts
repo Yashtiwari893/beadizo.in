@@ -71,7 +71,11 @@ async function callGeminiAI(prompt: string): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) throw new Error('NO_API_KEY');
 
-  const models = ['gemini-1.5-flash', 'gemini-2.0-flash'];
+  const models = [
+    'gemini-3.6-flash',
+    'gemini-3.5-flash',
+    'gemini-3.5-flash-lite',
+  ];
   let lastError: Error | null = null;
 
   for (const model of models) {
@@ -92,7 +96,10 @@ async function callGeminiAI(prompt: string): Promise<string> {
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: {
               temperature: 0.6,
-              maxOutputTokens: 450,
+              maxOutputTokens: 1000,
+              thinkingConfig: {
+                thinkingBudget: 0,
+              },
             },
           }),
         }
