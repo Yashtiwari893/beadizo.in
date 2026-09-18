@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 /** Folders the admin UI is allowed to write to — blocks path traversal via `folder`. */
-const ALLOWED_FOLDERS = new Set(['products', 'categories', 'hero', 'offers', 'settings']);
+const ALLOWED_FOLDERS = new Set(['products', 'categories', 'hero', 'offers', 'settings', 'instagram']);
 
 /**
  * Magic-byte signatures. The browser-supplied MIME type and the filename

@@ -14,8 +14,9 @@ import {
   ExternalLink,
   MessageSquare,
 } from 'lucide-react';
-import { getProducts, getCategories, getHeroSlides, getPopupOffers, getSiteSettings, getContactSubmissions } from '@/lib/supabase/data';
-import { DbProduct, DbCategory, DbHeroSlide, DbPopupOffer, DbSiteSettings, DbContactSubmission } from '@/lib/supabase/types';
+import { InstagramIcon } from '@/components/icons/InstagramIcon';
+import { getProducts, getCategories, getHeroSlides, getPopupOffers, getSiteSettings, getContactSubmissions, getInstagramPosts } from '@/lib/supabase/data';
+import { DbProduct, DbCategory, DbHeroSlide, DbPopupOffer, DbSiteSettings, DbContactSubmission, DbInstagramPost } from '@/lib/supabase/types';
 
 export default function AdminDashboardPage() {
   const [products, setProducts] = useState<DbProduct[]>([]);
@@ -24,18 +25,20 @@ export default function AdminDashboardPage() {
   const [offers, setOffers] = useState<DbPopupOffer[]>([]);
   const [settings, setSettings] = useState<DbSiteSettings | null>(null);
   const [inquiries, setInquiries] = useState<DbContactSubmission[]>([]);
+  const [instaPosts, setInstaPosts] = useState<DbInstagramPost[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
       try {
-        const [prods, cats, slides, popups, sett, inqs] = await Promise.all([
+        const [prods, cats, slides, popups, sett, inqs, instas] = await Promise.all([
           getProducts(),
           getCategories(),
           getHeroSlides(),
           getPopupOffers(),
           getSiteSettings(),
           getContactSubmissions().catch(() => []),
+          getInstagramPosts(true).catch(() => []),
         ]);
         setProducts(prods);
         setCategories(cats);
@@ -43,6 +46,7 @@ export default function AdminDashboardPage() {
         setOffers(popups);
         setSettings(sett);
         setInquiries(inqs);
+        setInstaPosts(instas);
       } catch (err) {
         console.error('Failed loading dashboard stats', err);
       } finally {
@@ -105,6 +109,14 @@ export default function AdminDashboardPage() {
       icon: Tag,
       link: '/admin/offers',
       color: '#86EFAC',
+    },
+    {
+      title: 'Instagram Feed',
+      value: instaPosts.length,
+      sub: `${instaPosts.filter((p) => p.is_active).length} Active on Homepage`,
+      icon: InstagramIcon,
+      link: '/admin/instagram',
+      color: '#E879F9',
     },
   ];
 

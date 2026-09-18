@@ -24,6 +24,7 @@ import {
   Loader2,
   MessageSquare,
 } from 'lucide-react';
+import { InstagramIcon } from '@/components/icons/InstagramIcon';
 
 function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -84,6 +85,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
     { label: 'Products', href: '/admin/products', icon: Package },
     { label: 'Categories', href: '/admin/categories', icon: Layers },
     { label: 'Hero Banners', href: '/admin/hero', icon: ImageIcon },
+    { label: 'Instagram Feed', href: '/admin/instagram', icon: InstagramIcon },
     { label: 'Popup Offers', href: '/admin/offers', icon: Tag },
     { label: 'Site Settings', href: '/admin/settings', icon: Settings },
   ];

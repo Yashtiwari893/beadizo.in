@@ -3,10 +3,11 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Star } from 'lucide-react';
+import { InstagramIcon } from '@/components/icons/InstagramIcon';
 import ProductCard from '@/components/ui/ProductCard';
 import PopupOfferModal from '@/components/ui/PopupOfferModal';
-import { getHeroSlides, getCategories, getProducts, getSiteSettings } from '@/lib/supabase/data';
-import { DbHeroSlide, DbCategory, DbProduct, DbSiteSettings } from '@/lib/supabase/types';
+import { getHeroSlides, getCategories, getProducts, getSiteSettings, getInstagramPosts, DEFAULT_INSTAGRAM_POSTS } from '@/lib/supabase/data';
+import { DbHeroSlide, DbCategory, DbProduct, DbSiteSettings, DbInstagramPost } from '@/lib/supabase/types';
 
 export default function HomePage() {
   const [heroSlides, setHeroSlides] = useState<DbHeroSlide[]>([]);
@@ -14,21 +15,24 @@ export default function HomePage() {
   const [categories, setCategories] = useState<DbCategory[]>([]);
   const [products, setProducts] = useState<DbProduct[]>([]);
   const [settings, setSettings] = useState<DbSiteSettings | null>(null);
+  const [instagramPosts, setInstagramPosts] = useState<DbInstagramPost[]>(DEFAULT_INSTAGRAM_POSTS);
 
   useEffect(() => {
     async function loadData() {
       try {
-        const [slidesData, catsData, prodsData, settingsData] = await Promise.all([
+        const [slidesData, catsData, prodsData, settingsData, instaData] = await Promise.all([
           getHeroSlides(),
           getCategories(),
           getProducts(),
           getSiteSettings(),
+          getInstagramPosts().catch(() => DEFAULT_INSTAGRAM_POSTS),
         ]);
         const activeSlides = slidesData.filter((s) => s.is_active);
         setHeroSlides(activeSlides.length > 0 ? activeSlides : slidesData);
         setCategories(catsData);
         setProducts(prodsData);
         setSettings(settingsData);
+        setInstagramPosts(instaData && instaData.length > 0 ? instaData.filter((p) => p.is_active) : DEFAULT_INSTAGRAM_POSTS);
       } catch (err) {
         console.error('Error loading homepage data', err);
       }
@@ -409,66 +413,43 @@ export default function HomePage() {
       </section>
 
       {/* ================= 10. INSTAGRAM GRID ================= */}
-      <section className="instagram-strip-section" id="instagram">
-        <div className="container">
-          <span className="section-eyebrow">FOLLOW US @BEADIZO</span>
-          <h2 className="section-main-title" style={{ fontSize: '1.6rem' }}>
-            Be a part of our beautiful journey
-          </h2>
+      {instagramPosts.length > 0 && (
+        <section className="instagram-strip-section" id="instagram">
+          <div className="container">
+            <span className="section-eyebrow">FOLLOW US @BEADIZO</span>
+            <h2 className="section-main-title" style={{ fontSize: '1.6rem' }}>
+              Be a part of our beautiful journey
+            </h2>
 
-          <div className="insta-strip-grid">
-            <div className="insta-tile">
-              <img
-                src="https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?auto=format&fit=crop&w=600&q=80"
-                alt="Beadizo lookbook 1"
-                loading="lazy"
-              />
-            </div>
-            <div className="insta-tile">
-              <img
-                src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80"
-                alt="Beadizo lookbook 2"
-                loading="lazy"
-              />
-            </div>
-            <div className="insta-tile">
-              <img
-                src="https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=600&q=80"
-                alt="Beadizo lookbook 3"
-                loading="lazy"
-              />
-            </div>
-            <div className="insta-tile">
-              <img
-                src="https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=600&q=80"
-                alt="Beadizo lookbook 4"
-                loading="lazy"
-              />
-            </div>
-            <div className="insta-tile">
-              <img
-                src="https://images.unsplash.com/photo-1535632787350-4e68ef0ac584?auto=format&fit=crop&w=600&q=80"
-                alt="Beadizo lookbook 5"
-                loading="lazy"
-              />
-            </div>
-            <div className="insta-tile">
-              <img
-                src="https://images.unsplash.com/photo-1600003014755-ba31aa59c4b6?auto=format&fit=crop&w=600&q=80"
-                alt="Beadizo lookbook 6"
-                loading="lazy"
-              />
-            </div>
-            <div className="insta-tile">
-              <img
-                src="https://images.unsplash.com/photo-1576053139778-7e32f2ae3cfd?auto=format&fit=crop&w=600&q=80"
-                alt="Beadizo lookbook 7"
-                loading="lazy"
-              />
+            <div
+              className="insta-strip-grid"
+              style={{
+                gridTemplateColumns: `repeat(${Math.min(instagramPosts.length, 7)}, 1fr)`,
+              }}
+            >
+              {instagramPosts.map((post) => (
+                <a
+                  key={post.id}
+                  href={post.post_link || 'https://www.instagram.com/beadizo.in'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="insta-tile"
+                  aria-label={post.caption || 'Follow Beadizo on Instagram'}
+                >
+                  <img
+                    src={post.image_url}
+                    alt={post.caption || 'Beadizo lookbook'}
+                    loading="lazy"
+                  />
+                  <div className="insta-tile-overlay">
+                    <InstagramIcon size={24} />
+                  </div>
+                </a>
+              ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ================= 11. NEWSLETTER ================= */}
       <section className="newsletter-strip-section">

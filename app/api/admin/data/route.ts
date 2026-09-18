@@ -11,6 +11,7 @@ import {
   validateSiteSettings,
   validateDeleteId,
   validateMarkContactRead,
+  validateInstagramPost,
 } from '@/lib/validation/adminSchemas';
 
 export const runtime = 'nodejs';
@@ -175,6 +176,25 @@ export async function POST(request: NextRequest) {
           .single();
         if (error) throw error;
         return NextResponse.json({ data });
+      }
+
+      // -------------------------------------------------------- Instagram posts
+      case 'saveInstagramPost': {
+        const { id, record } = validateInstagramPost(payload);
+        const query = id
+          ? supabase.from('instagram_posts').update(record).eq('id', id).select().single()
+          : supabase.from('instagram_posts').insert([record]).select().single();
+
+        const { data, error } = await query;
+        if (error) throw error;
+        return NextResponse.json({ data });
+      }
+
+      case 'deleteInstagramPost': {
+        const id = validateDeleteId(payload);
+        const { error } = await supabase.from('instagram_posts').delete().eq('id', id);
+        if (error) throw error;
+        return NextResponse.json({ success: true });
       }
 
       // -------------------------------------------------- Contact Submissions

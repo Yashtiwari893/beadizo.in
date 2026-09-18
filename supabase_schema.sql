@@ -109,6 +109,19 @@ CREATE TABLE IF NOT EXISTS public.contact_submissions (
 );
 
 -- --------------------------------------------------------------------------
+-- 5c. INSTAGRAM POSTS TABLE (Dynamic "Follow Us @Beadizo" Feed)
+-- --------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.instagram_posts (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  image_url TEXT NOT NULL,
+  post_link TEXT NOT NULL DEFAULT 'https://www.instagram.com/beadizo.in',
+  caption TEXT,
+  display_order INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- --------------------------------------------------------------------------
 -- 6. DATA INTEGRITY CONSTRAINTS
 --    Enforced by Postgres, so they hold even if an application check is missed.
 -- --------------------------------------------------------------------------
@@ -156,6 +169,7 @@ CREATE INDEX IF NOT EXISTS idx_hero_slides_order ON public.hero_slides (display_
 CREATE INDEX IF NOT EXISTS idx_popup_offers_active ON public.popup_offers (is_active) WHERE is_active = true;
 CREATE INDEX IF NOT EXISTS idx_contact_submissions_created_at ON public.contact_submissions (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_contact_submissions_is_read ON public.contact_submissions (is_read);
+CREATE INDEX IF NOT EXISTS idx_instagram_posts_order ON public.instagram_posts (display_order ASC) WHERE is_active = true;
 
 -- Keep products.updated_at honest even for direct SQL edits.
 CREATE OR REPLACE FUNCTION public.set_updated_at()
@@ -217,6 +231,7 @@ ALTER TABLE public.hero_slides ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.popup_offers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.contact_submissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.instagram_posts ENABLE ROW LEVEL SECURITY;
 
 -- FORCE applies RLS even to the table owner, so a future owner-context
 -- connection cannot quietly bypass these policies.
@@ -226,6 +241,7 @@ ALTER TABLE public.hero_slides FORCE ROW LEVEL SECURITY;
 ALTER TABLE public.popup_offers FORCE ROW LEVEL SECURITY;
 ALTER TABLE public.site_settings FORCE ROW LEVEL SECURITY;
 ALTER TABLE public.contact_submissions FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.instagram_posts FORCE ROW LEVEL SECURITY;
 
 -- Idempotent: drop every policy this script manages before re-creating.
 DROP POLICY IF EXISTS "Public Read Categories" ON public.categories;
@@ -234,6 +250,7 @@ DROP POLICY IF EXISTS "Public Read Hero Slides" ON public.hero_slides;
 DROP POLICY IF EXISTS "Public Read Popup Offers" ON public.popup_offers;
 DROP POLICY IF EXISTS "Public Read Site Settings" ON public.site_settings;
 DROP POLICY IF EXISTS "Public Insert Contact Submissions" ON public.contact_submissions;
+DROP POLICY IF EXISTS "Public Read Instagram Posts" ON public.instagram_posts;
 
 -- Drop any permissive write policies left over from earlier revisions.
 DROP POLICY IF EXISTS "Admin All Categories" ON public.categories;
@@ -241,11 +258,13 @@ DROP POLICY IF EXISTS "Admin All Products" ON public.products;
 DROP POLICY IF EXISTS "Admin All Hero Slides" ON public.hero_slides;
 DROP POLICY IF EXISTS "Admin All Popup Offers" ON public.popup_offers;
 DROP POLICY IF EXISTS "Admin All Site Settings" ON public.site_settings;
+DROP POLICY IF EXISTS "Admin All Instagram Posts" ON public.instagram_posts;
 
 CREATE POLICY "Public Read Categories"    ON public.categories    FOR SELECT TO anon, authenticated USING (true);
 CREATE POLICY "Public Read Hero Slides"   ON public.hero_slides   FOR SELECT TO anon, authenticated USING (is_active = true);
 CREATE POLICY "Public Read Popup Offers"  ON public.popup_offers  FOR SELECT TO anon, authenticated USING (true);
 CREATE POLICY "Public Read Site Settings" ON public.site_settings FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "Public Read Instagram Posts" ON public.instagram_posts FOR SELECT TO anon, authenticated USING (is_active = true);
 
 -- Draft/hidden products stay invisible to the public entirely, rather than
 -- being fetched and then filtered in the browser.
@@ -262,6 +281,7 @@ REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON public.hero_slides   FROM anon, authe
 REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON public.popup_offers  FROM anon, authenticated;
 REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON public.site_settings FROM anon, authenticated;
 REVOKE SELECT, UPDATE, DELETE, TRUNCATE ON public.contact_submissions FROM anon, authenticated;
+REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON public.instagram_posts FROM anon, authenticated;
 
 -- --------------------------------------------------------------------------
 -- 9. SUPABASE STORAGE BUCKET: beadizo-media

@@ -36,8 +36,8 @@ function extractId(payload: any): string | undefined {
   const id = payload?.id;
   if (id === undefined || id === null || id === '') return undefined;
   if (!isUuid(id)) {
-    // Locally-generated ids ("local-123", "cat-456") are not database rows.
-    if (typeof id === 'string' && /^(local|cat|hero|offer)-/.test(id)) return undefined;
+    // Locally-generated ids ("local-123", "cat-456", "insta-789") are not database rows.
+    if (typeof id === 'string' && /^(local|cat|hero|offer|insta)-/.test(id)) return undefined;
     fail('Invalid record id.');
   }
   return id as string;
@@ -177,6 +177,36 @@ export function validatePopupOffer(payload: any): Validated<Record<string, unkno
       button_text: clampString(payload.button_text, 60),
       button_link: safeLink(payload.button_link, '/collections'),
       is_active: toBoolean(payload.is_active, false),
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Instagram posts
+// ---------------------------------------------------------------------------
+export function validateInstagramPost(payload: any): Validated<Record<string, unknown>> {
+  if (!payload || typeof payload !== 'object') fail('Invalid Instagram post payload.');
+
+  const rawImage = payload.image_url;
+  if (!rawImage || typeof rawImage !== 'string' || !rawImage.trim()) {
+    fail('Post image URL is required.');
+  }
+  const imageUrl = safeImageUrl(rawImage, '');
+  if (!imageUrl) {
+    fail('Invalid image URL.');
+  }
+
+  const rawLink = payload.post_link;
+  const postLink = safeLink(rawLink, 'https://www.instagram.com/beadizo.in');
+
+  return {
+    id: extractId(payload),
+    record: {
+      image_url: imageUrl,
+      post_link: postLink,
+      caption: clampString(payload.caption, 200),
+      display_order: clampNumber(payload.display_order, { min: 0, max: 9999, fallback: 0 }),
+      is_active: toBoolean(payload.is_active, true),
     },
   };
 }

@@ -1,5 +1,5 @@
 import { supabase, isSupabaseConfigured } from './client';
-import { DbProduct, DbCategory, DbHeroSlide, DbPopupOffer, DbSiteSettings, DbContactSubmission } from './types';
+import { DbProduct, DbCategory, DbHeroSlide, DbPopupOffer, DbSiteSettings, DbContactSubmission, DbInstagramPost } from './types';
 import { BEADIZO_PRODUCTS } from '@/data/products';
 import { safeLink, safeImageUrl } from '@/lib/security/sanitize';
 
@@ -27,6 +27,7 @@ const LOCAL_HERO_KEY = 'beadizo_cms_hero';
 const LOCAL_OFFERS_KEY = 'beadizo_cms_offers';
 const LOCAL_SETTINGS_KEY = 'beadizo_cms_settings';
 const LOCAL_INQUIRIES_KEY = 'beadizo_cms_inquiries';
+const LOCAL_INSTAGRAM_KEY = 'beadizo_cms_instagram';
 
 // In-memory cache for instantaneous client navigation (0ms)
 interface CacheItem<T> {
@@ -704,3 +705,137 @@ export async function getUnreadInquiriesCount(): Promise<number> {
     return 0;
   }
 }
+
+// ==============================================================================
+// 7. INSTAGRAM POSTS ("FOLLOW US @BEADIZO")
+// ==============================================================================
+export const DEFAULT_INSTAGRAM_POSTS: DbInstagramPost[] = [
+  {
+    id: 'default-insta-1',
+    image_url: 'https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?auto=format&fit=crop&w=600&q=80',
+    post_link: 'https://www.instagram.com/beadizo.in',
+    caption: 'Beadizo lookbook 1',
+    display_order: 1,
+    is_active: true,
+  },
+  {
+    id: 'default-insta-2',
+    image_url: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80',
+    post_link: 'https://www.instagram.com/beadizo.in',
+    caption: 'Beadizo lookbook 2',
+    display_order: 2,
+    is_active: true,
+  },
+  {
+    id: 'default-insta-3',
+    image_url: 'https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=600&q=80',
+    post_link: 'https://www.instagram.com/beadizo.in',
+    caption: 'Beadizo lookbook 3',
+    display_order: 3,
+    is_active: true,
+  },
+  {
+    id: 'default-insta-4',
+    image_url: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=600&q=80',
+    post_link: 'https://www.instagram.com/beadizo.in',
+    caption: 'Beadizo lookbook 4',
+    display_order: 4,
+    is_active: true,
+  },
+  {
+    id: 'default-insta-5',
+    image_url: 'https://images.unsplash.com/photo-1535632787350-4e68ef0ac584?auto=format&fit=crop&w=600&q=80',
+    post_link: 'https://www.instagram.com/beadizo.in',
+    caption: 'Beadizo lookbook 5',
+    display_order: 5,
+    is_active: true,
+  },
+  {
+    id: 'default-insta-6',
+    image_url: 'https://images.unsplash.com/photo-1600003014755-ba31aa59c4b6?auto=format&fit=crop&w=600&q=80',
+    post_link: 'https://www.instagram.com/beadizo.in',
+    caption: 'Beadizo lookbook 6',
+    display_order: 6,
+    is_active: true,
+  },
+];
+
+function normaliseInstagramPost(raw: any): DbInstagramPost {
+  return {
+    id: String(raw.id || ''),
+    image_url: safeImageUrl(raw.image_url, DEFAULT_INSTAGRAM_POSTS[0].image_url),
+    post_link: safeLink(raw.post_link, 'https://www.instagram.com/beadizo.in'),
+    caption: raw.caption ? String(raw.caption).slice(0, 200) : null,
+    display_order: Number.isFinite(Number(raw.display_order)) ? Number(raw.display_order) : 0,
+    is_active: Boolean(raw.is_active ?? true),
+    created_at: raw.created_at,
+  };
+}
+
+export async function getInstagramPosts(includeInactive = false): Promise<DbInstagramPost[]> {
+  const cacheKey = `instagram:${includeInactive ? 'all' : 'active'}`;
+  const cached = MEM_CACHE.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    return cached.data;
+  }
+
+  if (DEMO_MODE) {
+    const list = readLocal<DbInstagramPost[]>(LOCAL_INSTAGRAM_KEY) || DEFAULT_INSTAGRAM_POSTS;
+    const filtered = includeInactive ? list : list.filter((p) => p.is_active);
+    const result = filtered.map(normaliseInstagramPost);
+    MEM_CACHE.set(cacheKey, { data: result, timestamp: Date.now() });
+    return result;
+  }
+
+  let query = supabase
+    .from('instagram_posts')
+    .select('*')
+    .order('display_order', { ascending: true });
+
+  if (!includeInactive) {
+    query = query.eq('is_active', true);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    console.error('[data] getInstagramPosts failed:', error.message);
+    const fallback = includeInactive ? DEFAULT_INSTAGRAM_POSTS : DEFAULT_INSTAGRAM_POSTS.filter((p) => p.is_active);
+    return cached?.data || fallback;
+  }
+
+  // If table has records, use them; if empty, fallback to curated lookbook posts
+  const list = data && data.length > 0 ? data : (includeInactive ? [] : DEFAULT_INSTAGRAM_POSTS);
+  const result = list.map(normaliseInstagramPost);
+  MEM_CACHE.set(cacheKey, { data: result, timestamp: Date.now() });
+  return result;
+}
+
+export async function saveInstagramPost(post: Partial<DbInstagramPost>): Promise<DbInstagramPost> {
+  invalidateCache('instagram');
+  if (!DEMO_MODE) {
+    return callAdminDataApi<DbInstagramPost>('saveInstagramPost', post);
+  }
+
+  const current = readLocal<DbInstagramPost[]>(LOCAL_INSTAGRAM_KEY) || [...DEFAULT_INSTAGRAM_POSTS];
+  const id = post.id || `insta-${Date.now()}`;
+  const item = normaliseInstagramPost({ ...DEFAULT_INSTAGRAM_POSTS[0], ...post, id });
+  const idx = current.findIndex((p) => p.id === id);
+  if (idx > -1) current[idx] = item;
+  else current.push(item);
+
+  writeLocal(LOCAL_INSTAGRAM_KEY, current);
+  return item;
+}
+
+export async function deleteInstagramPost(id: string): Promise<boolean> {
+  invalidateCache('instagram');
+  if (!DEMO_MODE) {
+    await callAdminDataApi('deleteInstagramPost', { id });
+    return true;
+  }
+
+  const current = readLocal<DbInstagramPost[]>(LOCAL_INSTAGRAM_KEY) || [...DEFAULT_INSTAGRAM_POSTS];
+  writeLocal(LOCAL_INSTAGRAM_KEY, current.filter((p) => p.id !== id));
+  return true;
+}
+

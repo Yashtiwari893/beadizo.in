@@ -81,3 +81,14 @@ export interface DbContactSubmission {
   is_read: boolean;
   created_at: string;
 }
+
+export interface DbInstagramPost {
+  id: string;
+  image_url: string;
+  post_link: string;
+  caption?: string | null;
+  display_order: number;
+  is_active: boolean;
+  created_at?: string;
+}
+

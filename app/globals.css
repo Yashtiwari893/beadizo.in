@@ -962,16 +962,19 @@ button {
 
 .insta-strip-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 10px;
   margin-top: 32px;
 }
 
 .insta-tile {
+  position: relative;
   aspect-ratio: 1/1;
-  border-radius: 4px;
+  border-radius: 6px;
   overflow: hidden;
   background: #F4EFEB;
+  display: block;
+  text-decoration: none;
 }
 
 .insta-tile img {
@@ -981,8 +984,39 @@ button {
   transition: transform 0.4s ease;
 }
 
+.insta-tile-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 17, 22, 0.45);
+  backdrop-filter: blur(2px);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
 .insta-tile:hover img {
   transform: scale(1.08);
+}
+
+.insta-tile:hover .insta-tile-overlay {
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .insta-strip-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .insta-strip-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px;
+  }
 }
 
 /* ==========================================================================
