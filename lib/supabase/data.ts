@@ -315,6 +315,19 @@ export async function deleteProduct(id: string): Promise<boolean> {
   return true;
 }
 
+export async function deleteProductsBatch(ids: string[]): Promise<boolean> {
+  if (!ids || ids.length === 0) return true;
+  invalidateCache('product');
+  if (!DEMO_MODE) {
+    await callAdminDataApi('deleteProductsBatch', { ids });
+    return true;
+  }
+  const current = demoProducts().filter((p) => !ids.includes(p.id));
+  writeLocal(LOCAL_PRODUCTS_KEY, current);
+  return true;
+}
+
+
 // ==============================================================================
 // 2. CATEGORIES
 // ==============================================================================
@@ -387,6 +400,18 @@ export async function deleteCategory(id: string): Promise<boolean> {
   writeLocal(LOCAL_CATEGORIES_KEY, current.filter((c) => c.id !== id));
   return true;
 }
+
+export async function deleteCategoriesBatch(ids: string[], force = false): Promise<any> {
+  if (!ids || ids.length === 0) return { success: true, count: 0 };
+  invalidateCache('categories');
+  if (!DEMO_MODE) {
+    return await callAdminDataApi('deleteCategoriesBatch', { ids, force });
+  }
+  const current = readLocal<DbCategory[]>(LOCAL_CATEGORIES_KEY) || DEFAULT_CATEGORIES;
+  writeLocal(LOCAL_CATEGORIES_KEY, current.filter((c) => !ids.includes(c.id)));
+  return { success: true, count: ids.length };
+}
+
 
 // ==============================================================================
 // 3. HERO SLIDES

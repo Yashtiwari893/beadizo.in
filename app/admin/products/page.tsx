@@ -12,8 +12,11 @@ import {
   Edit,
   ExternalLink,
   Package,
+  Loader2,
+  X,
+  AlertTriangle,
 } from 'lucide-react';
-import { getProducts, getCategories, saveProduct, deleteProduct } from '@/lib/supabase/data';
+import { getProducts, getCategories, saveProduct, deleteProduct, deleteProductsBatch } from '@/lib/supabase/data';
 import { DbProduct, DbCategory } from '@/lib/supabase/types';
 
 export default function AdminProductsPage() {
@@ -24,7 +27,13 @@ export default function AdminProductsPage() {
   const [genderFilter, setGenderFilter] = useState('all');
   const [loading, setLoading] = useState(true);
 
+  // Bulk Selection & Deletion State
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+
   const [actionError, setActionError] = useState<string | null>(null);
+
 
   const loadData = async () => {
     setLoading(true);
@@ -82,6 +91,41 @@ export default function AdminProductsPage() {
     const matchesGender = genderFilter === 'all' || (p.gender || 'unisex').toLowerCase() === genderFilter.toLowerCase();
     return matchesSearch && matchesCategory && matchesGender;
   });
+
+  const handleToggleSelectOne = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleToggleSelectAll = () => {
+    const filteredIds = filtered.map((p) => p.id);
+    const allFilteredSelected =
+      filteredIds.length > 0 && filteredIds.every((id) => selectedIds.includes(id));
+
+    if (allFilteredSelected) {
+      setSelectedIds((prev) => prev.filter((id) => !filteredIds.includes(id)));
+    } else {
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...filteredIds])));
+    }
+  };
+
+  const handleBulkDeleteConfirm = async () => {
+    if (selectedIds.length === 0) return;
+    setBulkDeleting(true);
+    setActionError(null);
+    try {
+      await deleteProductsBatch(selectedIds);
+      setProducts((prev) => prev.filter((p) => !selectedIds.includes(p.id)));
+      setSelectedIds([]);
+      setBulkDeleteModalOpen(false);
+    } catch (err: any) {
+      setActionError(err?.message || 'Could not delete the selected products.');
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
 
   return (
     <div>
@@ -261,7 +305,16 @@ export default function AdminProductsPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
               <thead>
                 <tr style={{ background: 'rgba(255, 255, 255, 0.02)', color: '#A6A6B2', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                  <th style={{ padding: '14px 20px', fontWeight: 600 }}>Product & Images</th>
+                  <th style={{ padding: '14px 12px 14px 20px', width: '36px', textAlign: 'center' }}>
+                    <input
+                      type="checkbox"
+                      checked={filtered.length > 0 && filtered.every((p) => selectedIds.includes(p.id))}
+                      onChange={handleToggleSelectAll}
+                      title="Select / Deselect all filtered products"
+                      style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: '#DFBDB5' }}
+                    />
+                  </th>
+                  <th style={{ padding: '14px 16px', fontWeight: 600 }}>Product & Images</th>
                   <th style={{ padding: '14px 16px', fontWeight: 600 }}>Category</th>
                   <th style={{ padding: '14px 16px', fontWeight: 600 }}>Gender</th>
                   <th style={{ padding: '14px 16px', fontWeight: 600 }}>Selling Price</th>
@@ -277,12 +330,32 @@ export default function AdminProductsPage() {
                   const discountPercent = hasDiscount
                     ? Math.round(((prod.original_price! - prod.price) / prod.original_price!) * 100)
                     : 0;
+                  const isSelected = selectedIds.includes(prod.id);
 
                   return (
-                    <tr key={prod.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <tr
+                      key={prod.id}
+                      style={{
+                        borderBottom: '1px solid rgba(255,255,255,0.04)',
+                        background: isSelected ? 'rgba(223, 189, 181, 0.08)' : undefined,
+                        transition: 'background 0.15s ease',
+                      }}
+                    >
+                      {/* Checkbox */}
+                      <td style={{ padding: '14px 12px 14px 20px', textAlign: 'center' }}>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleToggleSelectOne(prod.id)}
+                          aria-label={`Select ${prod.title}`}
+                          style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: '#DFBDB5' }}
+                        />
+                      </td>
+
                       {/* Product details */}
-                      <td style={{ padding: '14px 20px' }}>
+                      <td style={{ padding: '14px 16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+
                           <div style={{ position: 'relative', width: '48px', height: '48px', flexShrink: 0, borderRadius: '4px', overflow: 'hidden', background: '#1F1F26' }}>
                             <img
                               src={prod.images[0] || '/assets/product_bracelet.jpg'}
@@ -500,6 +573,228 @@ export default function AdminProductsPage() {
           </div>
         )}
       </div>
+
+      {/* Floating Action Bar for Multiple Selected Products */}
+      {selectedIds.length > 0 && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 90,
+            background: '#1A1A22',
+            border: '1px solid rgba(223, 189, 181, 0.4)',
+            boxShadow: '0 12px 40px rgba(0, 0, 0, 0.7)',
+            borderRadius: '10px',
+            padding: '12px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+            maxWidth: '90vw',
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <CheckCircle2 size={18} style={{ color: '#DFBDB5' }} />
+            <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#FFFFFF' }}>
+              {selectedIds.length} {selectedIds.length === 1 ? 'product' : 'products'} selected
+            </span>
+          </div>
+
+          <div style={{ height: '20px', width: '1px', background: 'rgba(255,255,255,0.12)' }} />
+
+          <button
+            type="button"
+            onClick={handleToggleSelectAll}
+            style={{
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.15)',
+              color: '#D1D5DB',
+              borderRadius: '6px',
+              padding: '6px 12px',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            {filtered.length > 0 && filtered.every((p) => selectedIds.includes(p.id))
+              ? 'Deselect All'
+              : 'Select All Filtered'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSelectedIds([])}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#9CA3AF',
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+              textDecoration: 'underline',
+            }}
+          >
+            Clear Selection
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setBulkDeleteModalOpen(true)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: '#DC2626',
+              color: '#FFFFFF',
+              border: 'none',
+              borderRadius: '6px',
+              padding: '7px 16px',
+              fontSize: '0.84rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              marginLeft: 'auto',
+            }}
+          >
+            <Trash2 size={15} />
+            Delete Selected ({selectedIds.length})
+          </button>
+        </div>
+      )}
+
+      {/* Bulk Delete Confirmation Modal */}
+      {bulkDeleteModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 100,
+            padding: '20px',
+          }}
+        >
+          <div
+            style={{
+              background: '#141419',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              borderRadius: '12px',
+              padding: '24px',
+              maxWidth: '520px',
+              width: '100%',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.8)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px', color: '#EF4444' }}>
+              <AlertTriangle size={24} />
+              <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#FFFFFF', fontWeight: 700 }}>
+                Delete {selectedIds.length} {selectedIds.length === 1 ? 'Product' : 'Products'}?
+              </h3>
+            </div>
+
+            <p style={{ fontSize: '0.86rem', color: '#A6A6B2', margin: '0 0 16px', lineHeight: 1.5 }}>
+              This will permanently remove the selected products from your catalog and database. This action cannot be undone.
+            </p>
+
+            {/* Selected items preview list */}
+            <div
+              style={{
+                maxHeight: '180px',
+                overflowY: 'auto',
+                background: '#1F1F26',
+                borderRadius: '8px',
+                padding: '8px 12px',
+                marginBottom: '20px',
+                border: '1px solid rgba(255,255,255,0.06)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+              }}
+            >
+              {products
+                .filter((p) => selectedIds.includes(p.id))
+                .map((p) => (
+                  <div
+                    key={p.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      fontSize: '0.82rem',
+                      color: '#EDEDED',
+                    }}
+                  >
+                    <img
+                      src={p.images[0] || '/assets/product_bracelet.jpg'}
+                      alt={p.title}
+                      style={{ width: '32px', height: '32px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }}
+                    />
+                    <span style={{ fontWeight: 600, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {p.title}
+                    </span>
+                    <span style={{ color: '#DFBDB5', fontSize: '0.78rem' }}>₹{p.price.toLocaleString('en-IN')}</span>
+                  </div>
+                ))}
+            </div>
+
+            {/* Action buttons */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                type="button"
+                disabled={bulkDeleting}
+                onClick={() => setBulkDeleteModalOpen(false)}
+                style={{
+                  padding: '8px 16px',
+                  background: 'rgba(255,255,255,0.08)',
+                  color: '#EDEDED',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '0.84rem',
+                  fontWeight: 600,
+                  cursor: bulkDeleting ? 'not-allowed' : 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                disabled={bulkDeleting}
+                onClick={handleBulkDeleteConfirm}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 18px',
+                  background: '#DC2626',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '0.84rem',
+                  fontWeight: 700,
+                  cursor: bulkDeleting ? 'wait' : 'pointer',
+                }}
+              >
+                {bulkDeleting ? (
+                  <>
+                    <Loader2 size={15} className="lucide-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={15} />
+                    <span>Delete {selectedIds.length} {selectedIds.length === 1 ? 'Product' : 'Products'}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

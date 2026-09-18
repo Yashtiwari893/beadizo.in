@@ -1,27 +1,41 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Plus, Edit2, Trash2, Upload, Loader2, Image as ImageIcon } from 'lucide-react';
-import { getCategories, saveCategory, deleteCategory } from '@/lib/supabase/data';
-import { DbCategory } from '@/lib/supabase/types';
+import { Plus, Edit2, Trash2, Upload, Loader2, Image as ImageIcon, CheckCircle2, AlertTriangle, X } from 'lucide-react';
+import { getCategories, saveCategory, deleteCategory, getProducts, deleteCategoriesBatch } from '@/lib/supabase/data';
+import { DbCategory, DbProduct } from '@/lib/supabase/types';
 import { uploadMedia } from '@/lib/supabase/storage';
 import MediaLibraryPicker from '@/components/admin/MediaLibraryPicker';
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<DbCategory[]>([]);
+  const [products, setProducts] = useState<DbProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingCat, setEditingCat] = useState<Partial<DbCategory> | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
 
+  // Bulk Selection & Deletion State
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [inUseWarning, setInUseWarning] = useState<any | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const loadData = async () => {
     setLoading(true);
-    const cats = await getCategories();
-    setCategories(cats);
-    setLoading(false);
+    try {
+      const [cats, prods] = await Promise.all([getCategories(), getProducts().catch(() => [])]);
+      setCategories(cats);
+      setProducts(prods);
+    } catch (err: any) {
+      setActionError(err?.message || 'Failed to load categories.');
+    } finally {
+      setLoading(false);
+    }
   };
+
 
   useEffect(() => {
     loadData();
@@ -45,12 +59,51 @@ export default function AdminCategoriesPage() {
     try {
       await deleteCategory(id);
       setCategories((prev) => prev.filter((c) => c.id !== id));
+      setSelectedIds((prev) => prev.filter((i) => i !== id));
     } catch (err: any) {
       // Deleting a category that still has products is rejected by the
       // foreign key; surface that instead of appearing to succeed.
       alert(err?.message || 'Could not delete the category.');
     }
   };
+
+  const handleToggleSelectOne = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleToggleSelectAll = () => {
+    const allIds = categories.map((c) => c.id);
+    const allSelected = allIds.length > 0 && allIds.every((id) => selectedIds.includes(id));
+    if (allSelected) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(allIds);
+    }
+  };
+
+  const handleBulkDeleteConfirm = async (force = false) => {
+    if (selectedIds.length === 0) return;
+    setBulkDeleting(true);
+    setActionError(null);
+    try {
+      const res = await deleteCategoriesBatch(selectedIds, force);
+      if (res?.inUse && !force) {
+        setInUseWarning(res);
+        return;
+      }
+      setCategories((prev) => prev.filter((c) => !selectedIds.includes(c.id)));
+      setSelectedIds([]);
+      setBulkDeleteModalOpen(false);
+      setInUseWarning(null);
+    } catch (err: any) {
+      setActionError(err?.message || 'Could not delete the selected categories.');
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,26 +156,80 @@ export default function AdminCategoriesPage() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleOpenAdd}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          {categories.length > 0 && (
+            <button
+              type="button"
+              onClick={handleToggleSelectAll}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '9px 14px',
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.14)',
+                color: '#EDEDED',
+                borderRadius: '6px',
+                fontWeight: 600,
+                fontSize: '0.82rem',
+                cursor: 'pointer',
+              }}
+            >
+              {categories.every((c) => selectedIds.includes(c.id))
+                ? 'Deselect All'
+                : `Select All (${categories.length})`}
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={handleOpenAdd}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 18px',
+              background: '#DFBDB5',
+              color: '#0A0A0C',
+              border: 'none',
+              borderRadius: '6px',
+              fontWeight: 700,
+              fontSize: '0.84rem',
+              cursor: 'pointer',
+            }}
+          >
+            <Plus size={16} /> Add Category
+          </button>
+        </div>
+      </div>
+
+      {actionError && (
+        <div
+          role="alert"
           style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 18px',
-            background: '#DFBDB5',
-            color: '#0A0A0C',
-            border: 'none',
+            background: 'rgba(239, 68, 68, 0.12)',
+            border: '1px solid rgba(239, 68, 68, 0.35)',
+            color: '#FCA5A5',
+            padding: '12px 16px',
             borderRadius: '6px',
-            fontWeight: 700,
             fontSize: '0.84rem',
-            cursor: 'pointer',
+            marginBottom: '18px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
           }}
         >
-          <Plus size={16} /> Add Category
-        </button>
-      </div>
+          <span>{actionError}</span>
+          <button
+            type="button"
+            onClick={() => setActionError(null)}
+            style={{ background: 'none', border: 'none', color: '#FCA5A5', cursor: 'pointer' }}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Grid of Categories */}
       {loading ? (
@@ -131,90 +238,139 @@ export default function AdminCategoriesPage() {
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '18px' }}>
-          {categories.map((cat) => (
-          <div
-            key={cat.id}
-            style={{
-              background: '#141419',
-              border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: '8px',
-              overflow: 'hidden',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            <div style={{ position: 'relative', height: '140px', background: '#1F1F26' }}>
-              <img
-                src={cat.image_url || '/assets/product_bracelet.jpg'}
-                alt={cat.name}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-              <span
+          {categories.map((cat) => {
+            const isSelected = selectedIds.includes(cat.id);
+            const linkedCount = products.filter((p) => p.category_slug === cat.slug).length;
+
+            return (
+              <div
+                key={cat.id}
                 style={{
-                  position: 'absolute',
-                  top: '8px',
-                  left: '8px',
-                  background: 'rgba(0,0,0,0.7)',
-                  color: '#DFBDB5',
-                  padding: '2px 8px',
-                  borderRadius: '3px',
-                  fontSize: '0.72rem',
-                  fontWeight: 600,
+                  background: isSelected ? 'rgba(223, 189, 181, 0.05)' : '#141419',
+                  border: isSelected ? '1px solid #DFBDB5' : '1px solid rgba(255,255,255,0.08)',
+                  boxShadow: isSelected ? '0 0 0 1px rgba(223, 189, 181, 0.4)' : undefined,
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  transition: 'all 0.15s ease',
                 }}
               >
-                Order #{cat.display_order}
-              </span>
-            </div>
+                <div style={{ position: 'relative', height: '140px', background: '#1F1F26' }}>
+                  {/* Selector checkbox */}
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                      position: 'absolute',
+                      top: '8px',
+                      left: '8px',
+                      zIndex: 5,
+                      background: 'rgba(0,0,0,0.65)',
+                      backdropFilter: 'blur(4px)',
+                      borderRadius: '4px',
+                      padding: '3px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => handleToggleSelectOne(cat.id)}
+                      aria-label={`Select ${cat.name}`}
+                      style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: '#DFBDB5' }}
+                    />
+                  </div>
 
-            <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-              <div>
-                <h3 style={{ fontSize: '1.05rem', color: '#FFFFFF', margin: '0 0 4px', fontFamily: 'var(--font-serif)' }}>
-                  {cat.name}
-                </h3>
-                <div style={{ fontSize: '0.75rem', color: '#72727D' }}>Slug: /{cat.slug}</div>
-              </div>
+                  <img
+                    src={cat.image_url || '/assets/product_bracelet.jpg'}
+                    alt={cat.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: '8px',
+                      right: '8px',
+                      background: 'rgba(0,0,0,0.7)',
+                      color: '#DFBDB5',
+                      padding: '2px 8px',
+                      borderRadius: '3px',
+                      fontSize: '0.72rem',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Order #{cat.display_order}
+                  </span>
+                </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}>
-                <button
-                  type="button"
-                  onClick={() => handleEdit(cat)}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    padding: '6px 12px',
-                    background: 'rgba(223, 189, 181, 0.15)',
-                    color: '#DFBDB5',
-                    border: 'none',
-                    borderRadius: '4px',
-                    fontSize: '0.78rem',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
-                >
-                  <Edit2 size={13} /> Edit
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(cat.id, cat.name)}
-                  style={{
-                    padding: '6px 10px',
-                    background: 'rgba(239, 68, 68, 0.12)',
-                    color: '#F87171',
-                    border: 'none',
-                    borderRadius: '4px',
-                    fontSize: '0.78rem',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <Trash2 size={13} />
-                </button>
+                <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div>
+                    <h3 style={{ fontSize: '1.05rem', color: '#FFFFFF', margin: '0 0 4px', fontFamily: 'var(--font-serif)' }}>
+                      {cat.name}
+                    </h3>
+                    <div style={{ fontSize: '0.75rem', color: '#72727D' }}>Slug: /{cat.slug}</div>
+                    <div style={{ marginTop: '6px' }}>
+                      <span
+                        style={{
+                          display: 'inline-block',
+                          fontSize: '0.7rem',
+                          padding: '2px 8px',
+                          borderRadius: '3px',
+                          background: linkedCount > 0 ? 'rgba(223, 189, 181, 0.12)' : 'rgba(255,255,255,0.05)',
+                          color: linkedCount > 0 ? '#DFBDB5' : '#72727D',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {linkedCount} {linkedCount === 1 ? 'product' : 'products'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleEdit(cat)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '6px 12px',
+                        background: 'rgba(223, 189, 181, 0.15)',
+                        color: '#DFBDB5',
+                        border: 'none',
+                        borderRadius: '4px',
+                        fontSize: '0.78rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <Edit2 size={13} /> Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(cat.id, cat.name)}
+                      style={{
+                        padding: '6px 10px',
+                        background: 'rgba(239, 68, 68, 0.12)',
+                        color: '#F87171',
+                        border: 'none',
+                        borderRadius: '4px',
+                        fontSize: '0.78rem',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        ))}
-      </div>
+            );
+          })}
+        </div>
       )}
+
 
       {/* Edit / Add Modal */}
       {editingCat && (
@@ -433,6 +589,271 @@ export default function AdminCategoriesPage() {
         title="Select Category Thumbnail"
         onSelect={(url) => setEditingCat((prev) => (prev ? { ...prev, image_url: url } : null))}
       />
+
+      {/* Floating Action Bar for Multiple Selected Categories */}
+      {selectedIds.length > 0 && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 90,
+            background: '#1A1A22',
+            border: '1px solid rgba(223, 189, 181, 0.4)',
+            boxShadow: '0 12px 40px rgba(0, 0, 0, 0.7)',
+            borderRadius: '10px',
+            padding: '12px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+            maxWidth: '90vw',
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <CheckCircle2 size={18} style={{ color: '#DFBDB5' }} />
+            <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#FFFFFF' }}>
+              {selectedIds.length} {selectedIds.length === 1 ? 'category' : 'categories'} selected
+            </span>
+          </div>
+
+          <div style={{ height: '20px', width: '1px', background: 'rgba(255,255,255,0.12)' }} />
+
+          <button
+            type="button"
+            onClick={handleToggleSelectAll}
+            style={{
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.15)',
+              color: '#D1D5DB',
+              borderRadius: '6px',
+              padding: '6px 12px',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            {categories.every((c) => selectedIds.includes(c.id)) ? 'Deselect All' : 'Select All'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedIds([]);
+              setInUseWarning(null);
+            }}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#9CA3AF',
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+              textDecoration: 'underline',
+            }}
+          >
+            Clear Selection
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setInUseWarning(null);
+              setBulkDeleteModalOpen(true);
+            }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: '#DC2626',
+              color: '#FFFFFF',
+              border: 'none',
+              borderRadius: '6px',
+              padding: '7px 16px',
+              fontSize: '0.84rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              marginLeft: 'auto',
+            }}
+          >
+            <Trash2 size={15} />
+            Delete Selected ({selectedIds.length})
+          </button>
+        </div>
+      )}
+
+      {/* Bulk Delete Confirmation Modal */}
+      {bulkDeleteModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1100,
+            padding: '20px',
+          }}
+        >
+          <div
+            style={{
+              background: '#141419',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              borderRadius: '12px',
+              padding: '24px',
+              maxWidth: '520px',
+              width: '100%',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.8)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px', color: '#EF4444' }}>
+              <AlertTriangle size={24} />
+              <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#FFFFFF', fontWeight: 700 }}>
+                Delete {selectedIds.length} {selectedIds.length === 1 ? 'Category' : 'Categories'}?
+              </h3>
+            </div>
+
+            {/* In-Use Warning Banner */}
+            {(() => {
+              const selectedCats = categories.filter((c) => selectedIds.includes(c.id));
+              const selectedSlugs = selectedCats.map((c) => c.slug);
+              const linked = products.filter((p) => selectedSlugs.includes(p.category_slug));
+
+              if (inUseWarning || linked.length > 0) {
+                const count = inUseWarning ? (inUseWarning.linkedProducts?.length || linked.length) : linked.length;
+                return (
+                  <div
+                    style={{
+                      background: 'rgba(245, 158, 11, 0.12)',
+                      border: '1px solid rgba(245, 158, 11, 0.35)',
+                      borderRadius: '8px',
+                      padding: '12px 14px',
+                      marginBottom: '16px',
+                      color: '#FCD34D',
+                      fontSize: '0.82rem',
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    <strong>Warning:</strong> {count} product(s) are currently assigned to these categories.
+                    Deleting these categories will remove their category classification on the storefront.
+                  </div>
+                );
+              }
+              return (
+                <p style={{ fontSize: '0.86rem', color: '#A6A6B2', margin: '0 0 16px', lineHeight: 1.5 }}>
+                  This will permanently remove the selected categories from the shop navigation and homepage. This action cannot be undone.
+                </p>
+              );
+            })()}
+
+            {/* Selected items preview list */}
+            <div
+              style={{
+                maxHeight: '180px',
+                overflowY: 'auto',
+                background: '#1F1F26',
+                borderRadius: '8px',
+                padding: '8px 12px',
+                marginBottom: '20px',
+                border: '1px solid rgba(255,255,255,0.06)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+              }}
+            >
+              {categories
+                .filter((c) => selectedIds.includes(c.id))
+                .map((c) => {
+                  const pCount = products.filter((p) => p.category_slug === c.slug).length;
+                  return (
+                    <div
+                      key={c.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        fontSize: '0.82rem',
+                        color: '#EDEDED',
+                      }}
+                    >
+                      <img
+                        src={c.image_url || '/assets/product_bracelet.jpg'}
+                        alt={c.name}
+                        style={{ width: '32px', height: '32px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }}
+                      />
+                      <span style={{ fontWeight: 600, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {c.name}
+                      </span>
+                      <span style={{ color: '#DFBDB5', fontSize: '0.76rem' }}>
+                        {pCount} {pCount === 1 ? 'product' : 'products'}
+                      </span>
+                    </div>
+                  );
+                })}
+            </div>
+
+            {/* Action buttons */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                type="button"
+                disabled={bulkDeleting}
+                onClick={() => {
+                  setBulkDeleteModalOpen(false);
+                  setInUseWarning(null);
+                }}
+                style={{
+                  padding: '8px 16px',
+                  background: 'rgba(255,255,255,0.08)',
+                  color: '#EDEDED',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '0.84rem',
+                  fontWeight: 600,
+                  cursor: bulkDeleting ? 'not-allowed' : 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                disabled={bulkDeleting}
+                onClick={() => handleBulkDeleteConfirm(!!inUseWarning)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 18px',
+                  background: '#DC2626',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '0.84rem',
+                  fontWeight: 700,
+                  cursor: bulkDeleting ? 'wait' : 'pointer',
+                }}
+              >
+                {bulkDeleting ? (
+                  <>
+                    <Loader2 size={15} className="lucide-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={15} />
+                    <span>
+                      {inUseWarning ? 'Delete Anyway (Force)' : `Delete Selected (${selectedIds.length})`}
+                    </span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

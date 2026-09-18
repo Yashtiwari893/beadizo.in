@@ -10,6 +10,7 @@ import {
   validatePopupOffer,
   validateSiteSettings,
   validateDeleteId,
+  validateDeleteIds,
   validateMarkContactRead,
   validateInstagramPost,
 } from '@/lib/validation/adminSchemas';
@@ -97,6 +98,13 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true });
       }
 
+      case 'deleteProductsBatch': {
+        const ids = validateDeleteIds(payload);
+        const { error } = await supabase.from('products').delete().in('id', ids);
+        if (error) throw error;
+        return NextResponse.json({ success: true, count: ids.length });
+      }
+
       // -------------------------------------------------------------- Categories
       case 'saveCategory': {
         const { id, record } = validateCategory(payload);
@@ -115,6 +123,47 @@ export async function POST(request: NextRequest) {
         if (error) throw error;
         return NextResponse.json({ success: true });
       }
+
+      case 'deleteCategoriesBatch': {
+        const ids = validateDeleteIds(payload);
+
+        // Fetch category info to inspect linked products
+        const { data: cats, error: catErr } = await supabase
+          .from('categories')
+          .select('id, name, slug')
+          .in('id', ids);
+        if (catErr) throw catErr;
+
+        const slugs = (cats || []).map((c) => c.slug).filter(Boolean);
+
+        if (slugs.length > 0 && !(payload as any)?.force) {
+          const { data: linkedProds, error: prodErr } = await supabase
+            .from('products')
+            .select('id, title, category_slug')
+            .in('category_slug', slugs)
+            .limit(20);
+
+          if (!prodErr && linkedProds && linkedProds.length > 0) {
+            return NextResponse.json(
+              {
+                inUse: true,
+                message: `Cannot delete: ${linkedProds.length} product(s) are still assigned to these categories.`,
+                linkedProducts: linkedProds.map((p) => ({
+                  id: p.id,
+                  title: p.title,
+                  category_slug: p.category_slug,
+                })),
+              },
+              { status: 409 }
+            );
+          }
+        }
+
+        const { error } = await supabase.from('categories').delete().in('id', ids);
+        if (error) throw error;
+        return NextResponse.json({ success: true, count: ids.length });
+      }
+
 
       // ------------------------------------------------------------- Hero slides
       case 'saveHeroSlide': {

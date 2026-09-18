@@ -254,6 +254,29 @@ export function validateDeleteId(payload: any): string {
   return id as string;
 }
 
+/** Validates a `{ ids: string[] }` bulk delete payload. */
+export function validateDeleteIds(payload: any): string[] {
+  const ids = payload?.ids;
+  if (!Array.isArray(ids) || ids.length === 0) {
+    fail('A non-empty array of record ids is required.');
+  }
+  if (ids.length > 100) {
+    fail('Cannot delete more than 100 records in a single batch.');
+  }
+  const validIds: string[] = [];
+  for (const id of ids) {
+    if (
+      typeof id !== 'string' ||
+      (!isUuid(id) && !/^(local|cat|hero|offer|insta|prod)-/.test(id) && !/^\d+$/.test(id))
+    ) {
+      fail(`Invalid record id: ${id}`);
+    }
+    validIds.push(id);
+  }
+  return validIds;
+}
+
+
 // ---------------------------------------------------------------------------
 // Contact Submissions
 // ---------------------------------------------------------------------------
