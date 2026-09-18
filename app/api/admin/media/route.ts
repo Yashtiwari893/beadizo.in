@@ -100,6 +100,38 @@ export async function GET(request: NextRequest) {
   }
 }
 
+function parseAndValidateObjectPath(publicUrl: string): string | null {
+  try {
+    const parsed = new URL(publicUrl);
+    const expectedHost = getSupabaseHost();
+    if (parsed.protocol !== 'https:' || !expectedHost || parsed.host !== expectedHost) {
+      return null;
+    }
+
+    const marker = `/storage/v1/object/public/${BUCKET_NAME}/`;
+    const markerIndex = parsed.pathname.indexOf(marker);
+    if (markerIndex === -1) {
+      return null;
+    }
+
+    const objectPath = decodeURIComponent(parsed.pathname.slice(markerIndex + marker.length));
+
+    // Whitelist path shape: <folder>/<name>.<ext>
+    if (!/^[a-z]+\/[A-Za-z0-9._-]+$/.test(objectPath) || objectPath.includes('..')) {
+      return null;
+    }
+
+    const folder = objectPath.split('/')[0];
+    if (!(ALLOWED_FOLDERS as readonly string[]).includes(folder)) {
+      return null;
+    }
+
+    return objectPath;
+  } catch {
+    return null;
+  }
+}
+
 export async function DELETE(request: NextRequest) {
   const denied = requireAdmin(request);
   if (denied) return denied;
@@ -121,67 +153,74 @@ export async function DELETE(request: NextRequest) {
 
   try {
     const body = await request.json().catch(() => ({}));
-    const publicUrl = body?.url;
     const force = Boolean(body?.force);
 
-    if (typeof publicUrl !== 'string' || publicUrl.length > 2048) {
-      return NextResponse.json({ error: 'Missing or invalid url.' }, { status: 400 });
+    // Support both single url: string and bulk urls: string[]
+    const rawUrls: string[] = Array.isArray(body?.urls)
+      ? body.urls
+      : typeof body?.url === 'string'
+      ? [body.url]
+      : [];
+
+    if (rawUrls.length === 0) {
+      return NextResponse.json({ error: 'Missing or invalid url(s).' }, { status: 400 });
     }
 
-    let parsed: URL;
-    try {
-      parsed = new URL(publicUrl);
-    } catch {
-      return NextResponse.json({ error: 'Invalid url.' }, { status: 400 });
+    if (rawUrls.length > 100) {
+      return NextResponse.json({ error: 'Cannot delete more than 100 images at once.' }, { status: 400 });
     }
 
-    const expectedHost = getSupabaseHost();
-    if (parsed.protocol !== 'https:' || !expectedHost || parsed.host !== expectedHost) {
-      return NextResponse.json({ error: 'That file is not managed by this store.' }, { status: 400 });
+    // Validate each URL and parse object path
+    const validItems: Array<{ url: string; objectPath: string }> = [];
+    for (const u of rawUrls) {
+      if (typeof u !== 'string' || u.length > 2048) continue;
+      const objectPath = parseAndValidateObjectPath(u);
+      if (objectPath) {
+        validItems.push({ url: u, objectPath });
+      }
     }
 
-    const marker = `/storage/v1/object/public/${BUCKET_NAME}/`;
-    const markerIndex = parsed.pathname.indexOf(marker);
-    if (markerIndex === -1) {
-      return NextResponse.json({ error: 'That file is not managed by this store.' }, { status: 400 });
-    }
-
-    const objectPath = decodeURIComponent(parsed.pathname.slice(markerIndex + marker.length));
-
-    // Whitelist path shape: <folder>/<name>.<ext>
-    if (!/^[a-z]+\/[A-Za-z0-9._-]+$/.test(objectPath) || objectPath.includes('..')) {
-      return NextResponse.json({ error: 'Invalid file path.' }, { status: 400 });
-    }
-    const folder = objectPath.split('/')[0];
-    if (!(ALLOWED_FOLDERS as readonly string[]).includes(folder)) {
-      return NextResponse.json({ error: 'Invalid file path.' }, { status: 400 });
+    if (validItems.length === 0) {
+      return NextResponse.json({ error: 'No valid image URLs provided for deletion.' }, { status: 400 });
     }
 
     // Check usage before deleting unless force is true
     if (!force) {
-      const usages = await findMediaUsages(publicUrl);
-      if (usages.length > 0) {
+      const inUseItems: Array<{ url: string; usages: any[] }> = [];
+      for (const item of validItems) {
+        const usages = await findMediaUsages(item.url);
+        if (usages.length > 0) {
+          inUseItems.push({ url: item.url, usages });
+        }
+      }
+
+      if (inUseItems.length > 0) {
         return NextResponse.json(
           {
-            error: 'This image is currently in use.',
+            error:
+              validItems.length === 1
+                ? 'This image is currently in use.'
+                : `${inUseItems.length} of ${validItems.length} selected images are currently in use.`,
             inUse: true,
-            usageCount: usages.length,
-            usages,
+            inUseCount: inUseItems.length,
+            inUseItems,
+            usages: inUseItems[0]?.usages || [],
           },
           { status: 409 }
         );
       }
     }
 
-    const { error: removeError } = await supabase.storage.from(BUCKET_NAME).remove([objectPath]);
+    const objectPaths = validItems.map((item) => item.objectPath);
+    const { error: removeError } = await supabase.storage.from(BUCKET_NAME).remove(objectPaths);
     if (removeError) {
       console.error('[admin/media] storage remove failed:', removeError.message);
-      return NextResponse.json({ error: 'Could not delete the file.' }, { status: 502 });
+      return NextResponse.json({ error: 'Could not delete the file(s).' }, { status: 502 });
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, deletedCount: objectPaths.length });
   } catch (err: any) {
     console.error('[admin/media] DELETE failed:', err?.message || err);
-    return NextResponse.json({ error: 'Could not delete the file.' }, { status: 500 });
+    return NextResponse.json({ error: 'Could not delete the file(s).' }, { status: 500 });
   }
 }

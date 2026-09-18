@@ -188,3 +188,43 @@ export async function deleteMediaWithSafety(
   return { success: true };
 }
 
+export interface BulkDeleteResult {
+  success: boolean;
+  inUse?: boolean;
+  inUseCount?: number;
+  inUseItems?: Array<{ url: string; usages: UsageScanResult['usages'] }>;
+  deletedCount?: number;
+  error?: string;
+}
+
+export async function deleteMediaBatchWithSafety(
+  urls: string[],
+  force = false
+): Promise<BulkDeleteResult> {
+  const res = await fetch('/api/admin/media', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ urls, force }),
+    credentials: 'same-origin',
+  });
+
+  const data = await res.json().catch(() => ({}));
+
+  if (res.status === 409) {
+    return {
+      success: false,
+      inUse: true,
+      inUseCount: data.inUseCount || (data.inUseItems ? data.inUseItems.length : 1),
+      inUseItems: data.inUseItems || [],
+      error: data.error || 'Some images are currently in use.',
+    };
+  }
+
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to delete images.');
+  }
+
+  return { success: true, deletedCount: data.deletedCount || urls.length };
+}
+
+

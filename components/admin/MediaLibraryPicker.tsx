@@ -16,6 +16,7 @@ import {
   Sliders,
   RotateCw,
   Folder,
+  CheckSquare,
 } from 'lucide-react';
 import {
   MediaItem,
@@ -23,6 +24,8 @@ import {
   fetchMediaLibrary,
   checkMediaUsage,
   deleteMediaWithSafety,
+  deleteMediaBatchWithSafety,
+  BulkDeleteResult,
   uploadMedia,
   uploadMediaBatch,
   BulkUploadProgress,
@@ -96,6 +99,12 @@ export default function MediaLibraryPicker({
   const [usageData, setUsageData] = useState<UsageScanResult | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Bulk Delete modal state
+  const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
+  const [bulkCheckingUsage, setBulkCheckingUsage] = useState(false);
+  const [bulkUsageData, setBulkUsageData] = useState<BulkDeleteResult | null>(null);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+
   // Load media library
   const loadMedia = useCallback(async () => {
     setLoading(true);
@@ -124,6 +133,8 @@ export default function MediaLibraryPicker({
       setRecentUploads([]);
       setUploadErrors([]);
       setUploadProgress(null);
+      setBulkDeleteModalOpen(false);
+      setBulkUsageData(null);
       if (defaultFolder && defaultFolder !== 'products') {
         setSelectedFolder(defaultFolder);
         setUploadFolder(defaultFolder);
@@ -140,6 +151,64 @@ export default function MediaLibraryPicker({
       item.folder.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesFolder && matchesSearch;
   });
+
+  // Selection helpers
+  const toggleSelectUrl = (url: string) => {
+    setSelectedUrls((prev) =>
+      prev.includes(url) ? prev.filter((u) => u !== url) : [...prev, url]
+    );
+  };
+
+  const selectAllVisible = () => {
+    const visibleUrls = filteredMedia.map((m) => m.url);
+    const allSelected = visibleUrls.length > 0 && visibleUrls.every((u) => selectedUrls.includes(u));
+    if (allSelected) {
+      setSelectedUrls((prev) => prev.filter((u) => !visibleUrls.includes(u)));
+    } else {
+      setSelectedUrls((prev) => Array.from(new Set([...prev, ...visibleUrls])));
+    }
+  };
+
+  // Bulk Delete Actions
+  const handleOpenBulkDelete = async () => {
+    if (selectedUrls.length === 0) return;
+    setBulkDeleteModalOpen(true);
+    setBulkCheckingUsage(true);
+    setBulkUsageData(null);
+
+    try {
+      const result = await deleteMediaBatchWithSafety(selectedUrls, false);
+      setBulkUsageData(result);
+    } catch {
+      setBulkUsageData(null);
+    } finally {
+      setBulkCheckingUsage(false);
+    }
+  };
+
+  const handleConfirmBulkDelete = async (force = false) => {
+    if (selectedUrls.length === 0) return;
+    setBulkDeleting(true);
+    try {
+      const res = await deleteMediaBatchWithSafety(selectedUrls, force);
+      if (!res.success && res.inUse) {
+        setBulkUsageData(res);
+        return;
+      }
+
+      // Removal succeeded
+      const deletedSet = new Set(selectedUrls);
+      setMediaList((prev) => prev.filter((m) => !deletedSet.has(m.url)));
+      setSelectedUrls([]);
+      setBulkDeleteModalOpen(false);
+      setBulkUsageData(null);
+      await loadMedia();
+    } catch (err: any) {
+      alert(`Bulk delete error: ${err?.message || err}`);
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
 
   // Handle image selection
   const handleItemClick = (item: MediaItem) => {
@@ -507,8 +576,55 @@ export default function MediaLibraryPicker({
                 })}
               </div>
 
-              {/* Search & Refresh */}
+              {/* Select All & Search & Refresh */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {filteredMedia.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={selectAllVisible}
+                    title={
+                      filteredMedia.every((m) => selectedUrls.includes(m.url))
+                        ? 'Deselect all visible images'
+                        : 'Select all visible images'
+                    }
+                    style={{
+                      height: '32px',
+                      padding: '0 12px',
+                      borderRadius: '6px',
+                      background:
+                        filteredMedia.length > 0 &&
+                        filteredMedia.every((m) => selectedUrls.includes(m.url))
+                          ? 'rgba(223, 189, 181, 0.2)'
+                          : '#1B1B24',
+                      border:
+                        filteredMedia.length > 0 &&
+                        filteredMedia.every((m) => selectedUrls.includes(m.url))
+                          ? '1px solid #DFBDB5'
+                          : '1px solid rgba(255,255,255,0.08)',
+                      color:
+                        filteredMedia.length > 0 &&
+                        filteredMedia.every((m) => selectedUrls.includes(m.url))
+                          ? '#DFBDB5'
+                          : '#EDEDED',
+                      fontSize: '0.74rem',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <CheckSquare size={13} />
+                    <span>
+                      {filteredMedia.length > 0 &&
+                      filteredMedia.every((m) => selectedUrls.includes(m.url))
+                        ? 'Deselect All'
+                        : `Select All (${filteredMedia.length})`}
+                    </span>
+                  </button>
+                )}
+
                 <div
                   style={{
                     position: 'relative',
@@ -744,28 +860,34 @@ export default function MediaLibraryPicker({
                           </button>
                         </div>
 
-                        {/* Multi-select checkbox badge */}
-                        {multiSelect && (
-                          <div
-                            style={{
-                              position: 'absolute',
-                              top: '6px',
-                              left: '6px',
-                              width: '20px',
-                              height: '20px',
-                              borderRadius: '4px',
-                              background: isSelected ? '#DFBDB5' : 'rgba(0,0,0,0.6)',
-                              border: isSelected ? 'none' : '1px solid rgba(255,255,255,0.3)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: '#0A0A0C',
-                              zIndex: 2,
-                            }}
-                          >
-                            {isSelected && <Check size={14} strokeWidth={3} />}
-                          </div>
-                        )}
+                        {/* Selection Checkbox (always accessible for bulk selection & bulk delete) */}
+                        <button
+                          type="button"
+                          title={isSelected ? 'Deselect image' : 'Select image'}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleSelectUrl(item.url);
+                          }}
+                          style={{
+                            position: 'absolute',
+                            top: '6px',
+                            left: '6px',
+                            width: '22px',
+                            height: '22px',
+                            borderRadius: '5px',
+                            background: isSelected ? '#DFBDB5' : 'rgba(0,0,0,0.65)',
+                            border: isSelected ? 'none' : '1px solid rgba(255,255,255,0.4)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#0A0A0C',
+                            cursor: 'pointer',
+                            zIndex: 2,
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          {isSelected && <Check size={14} strokeWidth={3} />}
+                        </button>
 
                         {/* Bottom Tag Bar */}
                         <div
@@ -808,62 +930,93 @@ export default function MediaLibraryPicker({
               )}
             </div>
 
-            {/* Bottom Multi-Select Actions Footer */}
-            {multiSelect && (
+            {/* Bottom Multi-Select & Bulk Actions Footer */}
+            {(multiSelect || selectedUrls.length > 0) && (
               <div
                 style={{
-                  padding: '14px 24px',
+                  padding: '12px 24px',
                   borderTop: '1px solid rgba(255, 255, 255, 0.08)',
                   background: '#15151C',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
+                  animation: 'fadeIn 0.15s ease',
                 }}
               >
-                <div style={{ fontSize: '0.82rem', color: '#A6A6B2' }}>
-                  <strong style={{ color: '#FFFFFF' }}>{selectedUrls.length}</strong> image
-                  {selectedUrls.length === 1 ? '' : 's'} selected
-                </div>
-
-                <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.82rem', color: '#A6A6B2' }}>
+                  <div>
+                    <strong style={{ color: '#FFFFFF' }}>{selectedUrls.length}</strong> image
+                    {selectedUrls.length === 1 ? '' : 's'} selected
+                  </div>
                   {selectedUrls.length > 0 && (
                     <button
                       type="button"
                       onClick={() => setSelectedUrls([])}
                       style={{
-                        padding: '8px 14px',
+                        padding: '4px 10px',
                         background: 'transparent',
-                        border: '1px solid rgba(255,255,255,0.15)',
-                        color: '#EDEDED',
-                        borderRadius: '6px',
-                        fontSize: '0.8rem',
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        color: '#A6A6B2',
+                        borderRadius: '4px',
+                        fontSize: '0.74rem',
                         cursor: 'pointer',
                       }}
                     >
                       Clear Selection
                     </button>
                   )}
-                  <button
-                    type="button"
-                    onClick={handleConfirmMultiSelect}
-                    disabled={selectedUrls.length === 0}
-                    style={{
-                      padding: '8px 20px',
-                      background: selectedUrls.length > 0 ? '#DFBDB5' : 'rgba(223, 189, 181, 0.2)',
-                      color: selectedUrls.length > 0 ? '#0A0A0C' : '#6B6B7A',
-                      border: 'none',
-                      borderRadius: '6px',
-                      fontSize: '0.82rem',
-                      fontWeight: 600,
-                      cursor: selectedUrls.length > 0 ? 'pointer' : 'not-allowed',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                    }}
-                  >
-                    <Check size={14} />
-                    Insert Selected ({selectedUrls.length})
-                  </button>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  {/* Bulk Delete Button */}
+                  {selectedUrls.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleOpenBulkDelete}
+                      style={{
+                        padding: '8px 16px',
+                        background: 'rgba(239, 68, 68, 0.15)',
+                        border: '1px solid rgba(239, 68, 68, 0.4)',
+                        color: '#FCA5A5',
+                        borderRadius: '6px',
+                        fontSize: '0.82rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        transition: 'background 0.15s ease',
+                      }}
+                    >
+                      <Trash2 size={14} color="#EF4444" />
+                      <span>Delete Selected ({selectedUrls.length})</span>
+                    </button>
+                  )}
+
+                  {/* Insert Selected (only for multiSelect form picker) */}
+                  {multiSelect && onSelectMultiple && (
+                    <button
+                      type="button"
+                      onClick={handleConfirmMultiSelect}
+                      disabled={selectedUrls.length === 0}
+                      style={{
+                        padding: '8px 20px',
+                        background: selectedUrls.length > 0 ? '#DFBDB5' : 'rgba(223, 189, 181, 0.2)',
+                        color: selectedUrls.length > 0 ? '#0A0A0C' : '#6B6B7A',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontSize: '0.82rem',
+                        fontWeight: 600,
+                        cursor: selectedUrls.length > 0 ? 'pointer' : 'not-allowed',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                      }}
+                    >
+                      <Check size={14} />
+                      Insert Selected ({selectedUrls.length})
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -1621,6 +1774,260 @@ export default function MediaLibraryPicker({
                 >
                   {deleting ? <Loader2 size={14} className="lucide-spin" /> : <Trash2 size={14} />}
                   <span>Delete Permanently</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================
+          SAFETY BULK DELETE CONFIRMATION MODAL
+          ========================================================= */}
+      {bulkDeleteModalOpen && selectedUrls.length > 0 && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(8px)',
+            zIndex: 10001,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+          }}
+          onClick={() => !bulkDeleting && setBulkDeleteModalOpen(false)}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '540px',
+              backgroundColor: '#16161F',
+              border: bulkUsageData?.inUse
+                ? '1px solid rgba(239, 68, 68, 0.5)'
+                : '1px solid rgba(255, 255, 255, 0.12)',
+              borderRadius: '12px',
+              padding: '24px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              boxShadow: '0 25px 60px rgba(0,0,0,0.8)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+              <div
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '10px',
+                  background: bulkUsageData?.inUse ? 'rgba(239, 68, 68, 0.15)' : 'rgba(223, 189, 181, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: bulkUsageData?.inUse ? '#EF4444' : '#DFBDB5',
+                  flexShrink: 0,
+                }}
+              >
+                {bulkUsageData?.inUse ? <AlertTriangle size={22} /> : <Trash2 size={20} />}
+              </div>
+              <div style={{ flex: 1 }}>
+                <h3 style={{ margin: '0 0 6px', fontSize: '1.05rem', color: '#FFFFFF' }}>
+                  {bulkUsageData?.inUse
+                    ? 'Some selected images are in use!'
+                    : `Delete ${selectedUrls.length} images from storage?`}
+                </h3>
+                <p style={{ margin: 0, fontSize: '0.82rem', color: '#A6A6B2', lineHeight: 1.4 }}>
+                  {selectedUrls.length} file{selectedUrls.length === 1 ? '' : 's'} selected for permanent deletion.
+                </p>
+              </div>
+            </div>
+
+            {/* Selected Thumbnails Preview Grid */}
+            <div
+              style={{
+                width: '100%',
+                maxHeight: '130px',
+                overflowY: 'auto',
+                borderRadius: '8px',
+                background: '#0D0D11',
+                border: '1px solid rgba(255,255,255,0.06)',
+                padding: '10px',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(55px, 1fr))',
+                gap: '8px',
+              }}
+            >
+              {selectedUrls.map((url, idx) => (
+                <div
+                  key={url + idx}
+                  style={{
+                    aspectRatio: '1/1',
+                    borderRadius: '4px',
+                    overflow: 'hidden',
+                    background: '#1A1A22',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                  }}
+                >
+                  <img src={url} alt="Selected preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+              ))}
+            </div>
+
+            {/* Usage Check Section */}
+            {bulkCheckingUsage ? (
+              <div
+                style={{
+                  padding: '12px',
+                  background: 'rgba(255,255,255,0.03)',
+                  borderRadius: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '0.8rem',
+                  color: '#DFBDB5',
+                }}
+              >
+                <Loader2 size={15} className="lucide-spin" />
+                <span>Scanning database to check if any of these images are being used...</span>
+              </div>
+            ) : bulkUsageData?.inUse ? (
+              <div
+                style={{
+                  padding: '14px',
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                }}
+              >
+                <div style={{ fontSize: '0.82rem', color: '#FCA5A5', fontWeight: 600 }}>
+                  ⚠️ Warning: {bulkUsageData.inUseCount} of the selected images are actively used:
+                </div>
+                <div
+                  style={{
+                    maxHeight: '140px',
+                    overflowY: 'auto',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                  }}
+                >
+                  {bulkUsageData.inUseItems?.map((item, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        fontSize: '0.76rem',
+                        color: '#EDEDED',
+                        background: 'rgba(0,0,0,0.3)',
+                        padding: '6px 8px',
+                        borderRadius: '4px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        {item.usages.map((u, j) => (
+                          <div key={j} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span
+                              style={{
+                                padding: '1px 5px',
+                                borderRadius: '3px',
+                                background: 'rgba(255,255,255,0.1)',
+                                fontSize: '0.65rem',
+                                textTransform: 'uppercase',
+                                color: '#DFBDB5',
+                              }}
+                            >
+                              {u.type}
+                            </span>
+                            <strong>{u.title}</strong>
+                            <span style={{ color: '#8E8E9B', fontSize: '0.7rem' }}>({u.location})</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ fontSize: '0.74rem', color: '#FCA5A5', marginTop: '4px' }}>
+                  Force-deleting these files will cause broken images on your live storefront.
+                </div>
+              </div>
+            ) : (
+              <div
+                style={{
+                  fontSize: '0.8rem',
+                  color: '#A6A6B2',
+                  lineHeight: 1.4,
+                }}
+              >
+                None of these images are currently linked to active products, categories, banners, or offers. It is safe to delete them.
+              </div>
+            )}
+
+            {/* Modal Actions */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
+              <button
+                type="button"
+                disabled={bulkDeleting}
+                onClick={() => setBulkDeleteModalOpen(false)}
+                style={{
+                  padding: '8px 16px',
+                  background: 'transparent',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  color: '#EDEDED',
+                  borderRadius: '6px',
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+
+              {bulkUsageData?.inUse ? (
+                <button
+                  type="button"
+                  disabled={bulkDeleting}
+                  onClick={() => handleConfirmBulkDelete(true)}
+                  style={{
+                    padding: '8px 16px',
+                    background: '#EF4444',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    cursor: bulkDeleting ? 'wait' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  {bulkDeleting ? <Loader2 size={14} className="lucide-spin" /> : <Trash2 size={14} />}
+                  <span>Delete All Anyway (Force)</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={bulkDeleting || bulkCheckingUsage}
+                  onClick={() => handleConfirmBulkDelete(true)}
+                  style={{
+                    padding: '8px 16px',
+                    background: '#EF4444',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    cursor: bulkDeleting || bulkCheckingUsage ? 'wait' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  {bulkDeleting ? <Loader2 size={14} className="lucide-spin" /> : <Trash2 size={14} />}
+                  <span>Delete {selectedUrls.length} Files Permanently</span>
                 </button>
               )}
             </div>
