@@ -52,6 +52,24 @@ export default function HomePage() {
     ? products.filter((p) => p.is_featured).slice(0, 4)
     : products.slice(0, 4);
 
+  // Format Hero text so that formatting matches Image 1 consistently
+  const rawHeadline = (activeSlide.headline || 'Small Beads\nBig Stories').replace(/\\n/g, '\n').trim();
+  const heroHeadlineText = rawHeadline.toLowerCase() === 'small beads big stories'
+    ? 'Small Beads\nBig Stories'
+    : rawHeadline;
+  const headlineLines = heroHeadlineText.split('\n');
+
+  const rawWatermark = (activeSlide.watermark_text || 'More than\nJewellery').replace(/\\n/g, '\n').trim();
+  const heroWatermarkText = rawWatermark.toLowerCase() === 'more than jewellery'
+    ? 'More than\nJewellery'
+    : rawWatermark;
+  const watermarkLines = heroWatermarkText.split('\n');
+
+  const rawBtnText = (activeSlide.button_text || 'EXPLORE COLLECTIONS →').trim();
+  const heroButtonText = rawBtnText.endsWith('→') || rawBtnText.endsWith('->')
+    ? rawBtnText.replace(/->$/, '→')
+    : `${rawBtnText} →`;
+
   return (
     <div>
       {/* Promotional Popup Modal */}
@@ -69,14 +87,19 @@ export default function HomePage() {
         <div className="container" style={{ width: '100%' }}>
           <div className="hero-inner">
             <span className="hero-tag">{activeSlide.tag || 'HANDCRAFTED JEWELLERY'}</span>
-            <h1 className="hero-headline" style={{ whiteSpace: 'pre-line' }}>
-              {activeSlide.headline || 'Small Beads\nBig Stories'}
+            <h1 className="hero-headline">
+              {headlineLines.map((line, idx) => (
+                <React.Fragment key={idx}>
+                  {line}
+                  {idx < headlineLines.length - 1 && <br />}
+                </React.Fragment>
+              ))}
             </h1>
             <p className="hero-description">
               {activeSlide.description || 'Thoughtfully crafted pieces, made to add a little more love to your everyday.'}
             </p>
             <Link href={activeSlide.button_link || '/collections'} className="btn-blush">
-              {activeSlide.button_text || 'EXPLORE COLLECTIONS →'}
+              {heroButtonText}
             </Link>
 
             {/* Slide Indicators if multiple */}
@@ -89,7 +112,7 @@ export default function HomePage() {
                     onClick={() => setCurrentSlideIndex(idx)}
                     aria-label={`Slide ${idx + 1}`}
                     className={`slider-bar ${currentSlideIndex === idx ? 'active' : ''}`}
-                    style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+                    style={{ border: 'none', padding: 0, cursor: 'pointer' }}
                   />
                 ))}
               </div>
@@ -99,8 +122,13 @@ export default function HomePage() {
 
         {activeSlide.watermark_text && (
           <div className="hero-watermark-right">
-            <span className="handwritten-watermark" style={{ whiteSpace: 'pre-line' }}>
-              {activeSlide.watermark_text}
+            <span className="handwritten-watermark">
+              {watermarkLines.map((line, idx) => (
+                <React.Fragment key={idx}>
+                  {line}
+                  {idx < watermarkLines.length - 1 && <br />}
+                </React.Fragment>
+              ))}
             </span>
           </div>
         )}

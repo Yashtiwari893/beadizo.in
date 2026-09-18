@@ -405,6 +405,32 @@ const DEFAULT_HERO: DbHeroSlide[] = [
   },
 ];
 
+function normaliseHeroSlide(slide: any): DbHeroSlide {
+  let headline = String(slide.headline || 'Small Beads\nBig Stories').replace(/\\n/g, '\n').trim();
+  if (headline.toLowerCase() === 'small beads big stories') {
+    headline = 'Small Beads\nBig Stories';
+  }
+
+  let watermark_text = String(slide.watermark_text || 'More than\nJewellery').replace(/\\n/g, '\n').trim();
+  if (watermark_text.toLowerCase() === 'more than jewellery') {
+    watermark_text = 'More than\nJewellery';
+  }
+
+  let button_text = String(slide.button_text || 'EXPLORE COLLECTIONS →').trim();
+  if (button_text && !button_text.endsWith('→') && !button_text.endsWith('->')) {
+    button_text = `${button_text} →`;
+  }
+
+  return {
+    ...slide,
+    headline,
+    watermark_text,
+    button_text: button_text || 'EXPLORE COLLECTIONS →',
+    button_link: safeLink(slide.button_link, '/collections'),
+    image_url: safeImageUrl(slide.image_url, '/assets/hero_banner.png'),
+  };
+}
+
 export async function getHeroSlides(): Promise<DbHeroSlide[]> {
   const cached = MEM_CACHE.get('hero:all');
   if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
@@ -412,7 +438,7 @@ export async function getHeroSlides(): Promise<DbHeroSlide[]> {
   }
 
   if (DEMO_MODE) {
-    const list = readLocal<DbHeroSlide[]>(LOCAL_HERO_KEY) || DEFAULT_HERO;
+    const list = (readLocal<DbHeroSlide[]>(LOCAL_HERO_KEY) || DEFAULT_HERO).map(normaliseHeroSlide);
     MEM_CACHE.set('hero:all', { data: list, timestamp: Date.now() });
     return list;
   }
@@ -424,27 +450,28 @@ export async function getHeroSlides(): Promise<DbHeroSlide[]> {
 
   if (error) {
     console.error('[data] getHeroSlides failed:', error.message);
-    return cached?.data || DEFAULT_HERO;
+    return cached?.data || DEFAULT_HERO.map(normaliseHeroSlide);
   }
 
-  const result = (data?.length ? data : DEFAULT_HERO).map((slide: any) => ({
-    ...slide,
-    button_link: safeLink(slide.button_link, '/collections'),
-    image_url: safeImageUrl(slide.image_url, '/assets/hero_banner.png'),
-  }));
+  const result = (data?.length ? data : DEFAULT_HERO).map(normaliseHeroSlide);
   MEM_CACHE.set('hero:all', { data: result, timestamp: Date.now() });
   return result;
 }
 
 export async function saveHeroSlide(slide: Partial<DbHeroSlide>): Promise<DbHeroSlide> {
   invalidateCache('hero');
+  const cleaned: Partial<DbHeroSlide> = {
+    ...slide,
+    headline: slide.headline ? String(slide.headline).replace(/\\n/g, '\n').trim() : undefined,
+    watermark_text: slide.watermark_text ? String(slide.watermark_text).replace(/\\n/g, '\n').trim() : undefined,
+  };
   if (!DEMO_MODE) {
-    return callAdminDataApi<DbHeroSlide>('saveHeroSlide', slide);
+    return callAdminDataApi<DbHeroSlide>('saveHeroSlide', cleaned);
   }
 
   const current = readLocal<DbHeroSlide[]>(LOCAL_HERO_KEY) || DEFAULT_HERO;
   const id = slide.id || `hero-${Date.now()}`;
-  const item = { ...DEFAULT_HERO[0], ...slide, id } as DbHeroSlide;
+  const item = normaliseHeroSlide({ ...DEFAULT_HERO[0], ...cleaned, id });
   const idx = current.findIndex((h) => h.id === id);
   if (idx > -1) current[idx] = item;
   else current.unshift(item);

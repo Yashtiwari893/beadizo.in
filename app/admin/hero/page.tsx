@@ -16,7 +16,12 @@ export default function AdminHeroPage() {
     async function load() {
       const data = await getHeroSlides();
       if (data.length > 0) {
-        setActiveSlide(data[0]);
+        const slide = data[0];
+        setActiveSlide({
+          ...slide,
+          headline: (slide.headline || 'Small Beads\nBig Stories').replace(/\\n/g, '\n'),
+          watermark_text: (slide.watermark_text || 'More than\nJewellery').replace(/\\n/g, '\n'),
+        });
       }
     }
     load();
@@ -189,26 +194,36 @@ export default function AdminHeroPage() {
 
           {/* Headline */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.78rem', color: '#DFBDB5', fontWeight: 600, marginBottom: '6px' }}>
-              Main Headline (Use \n for line break)
-            </label>
-            <input
-              type="text"
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <label style={{ fontSize: '0.78rem', color: '#DFBDB5', fontWeight: 600 }}>
+                Main Headline
+              </label>
+              <span style={{ fontSize: '0.72rem', color: '#A6A6B2' }}>
+                Press Enter for line break
+              </span>
+            </div>
+            <textarea
+              rows={2}
               value={activeSlide.headline}
               onChange={(e) => setActiveSlide({ ...activeSlide, headline: e.target.value })}
-              placeholder="e.g. Small Beads\nBig Stories"
+              placeholder={'Small Beads\nBig Stories'}
               style={{
                 width: '100%',
-                height: '42px',
                 background: '#1F1F26',
                 border: '1px solid rgba(255,255,255,0.1)',
                 borderRadius: '6px',
-                padding: '0 12px',
+                padding: '10px 12px',
                 color: '#FFFFFF',
                 fontSize: '0.95rem',
                 fontWeight: 600,
+                lineHeight: 1.35,
+                resize: 'vertical',
+                fontFamily: 'inherit',
               }}
             />
+            <p style={{ margin: '4px 0 0', fontSize: '0.72rem', color: '#8E8E9F' }}>
+              Line 1: &ldquo;Small Beads&rdquo; &bull; Line 2: &ldquo;Big Stories&rdquo;
+            </p>
           </div>
 
           {/* Description */}
@@ -255,6 +270,9 @@ export default function AdminHeroPage() {
                   fontSize: '0.85rem',
                 }}
               />
+              <p style={{ margin: '4px 0 0', fontSize: '0.72rem', color: '#8E8E9F' }}>
+                Arrow (→) is added automatically if omitted.
+              </p>
             </div>
             <div>
               <label style={{ display: 'block', fontSize: '0.78rem', color: '#A6A6B2', marginBottom: '6px' }}>
@@ -281,23 +299,30 @@ export default function AdminHeroPage() {
 
           {/* Watermark */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.78rem', color: '#A6A6B2', marginBottom: '6px' }}>
-              Handwritten Watermark (Right side)
-            </label>
-            <input
-              type="text"
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <label style={{ fontSize: '0.78rem', color: '#A6A6B2', fontWeight: 600 }}>
+                Handwritten Watermark (Right side)
+              </label>
+              <span style={{ fontSize: '0.72rem', color: '#8E8E9F' }}>
+                Press Enter for 2 lines
+              </span>
+            </div>
+            <textarea
+              rows={2}
               value={activeSlide.watermark_text || ''}
               onChange={(e) => setActiveSlide({ ...activeSlide, watermark_text: e.target.value })}
-              placeholder="More than\nJewellery"
+              placeholder={'More than\nJewellery'}
               style={{
                 width: '100%',
-                height: '40px',
                 background: '#1F1F26',
                 border: '1px solid rgba(255,255,255,0.1)',
                 borderRadius: '6px',
-                padding: '0 12px',
+                padding: '8px 12px',
                 color: '#FFFFFF',
                 fontSize: '0.85rem',
+                lineHeight: 1.35,
+                resize: 'vertical',
+                fontFamily: 'inherit',
               }}
             />
           </div>
@@ -360,7 +385,7 @@ export default function AdminHeroPage() {
                   whiteSpace: 'pre-line',
                 }}
               >
-                {activeSlide.headline.replace('\\n', '\n')}
+                {(activeSlide.headline || 'Small Beads\nBig Stories').replace(/\\n/g, '\n')}
               </h2>
               <p style={{ fontSize: '0.78rem', color: '#EDEDED', marginBottom: '16px', lineHeight: 1.5 }}>
                 {activeSlide.description}
@@ -374,9 +399,14 @@ export default function AdminHeroPage() {
                   fontSize: '0.75rem',
                   fontWeight: 700,
                   borderRadius: '3px',
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
                 }}
               >
-                {activeSlide.button_text}
+                {(() => {
+                  const b = (activeSlide.button_text || 'EXPLORE COLLECTIONS →').trim();
+                  return b.endsWith('→') || b.endsWith('->') ? b.replace(/->$/, '→') : `${b} →`;
+                })()}
               </div>
             </div>
 
@@ -393,9 +423,10 @@ export default function AdminHeroPage() {
                   opacity: 0.85,
                   textAlign: 'right',
                   whiteSpace: 'pre-line',
+                  lineHeight: 1.15,
                 }}
               >
-                {activeSlide.watermark_text.replace('\\n', '\n')}
+                {(activeSlide.watermark_text || 'More than\nJewellery').replace(/\\n/g, '\n')}
               </div>
             )}
           </div>

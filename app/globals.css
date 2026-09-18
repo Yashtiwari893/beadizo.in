@@ -444,6 +444,7 @@ button {
   line-height: 1.15;
   color: #FFFFFF;
   margin-bottom: 18px;
+  text-wrap: balance;
 }
 
 .hero-description {
@@ -460,11 +461,15 @@ button {
   right: 48px;
   z-index: 3;
   text-align: right;
+  pointer-events: none;
 }
 
 .hero-watermark-right .handwritten-watermark {
   font-size: 2.2rem;
+  line-height: 1.15;
   color: rgba(255, 255, 255, 0.9);
+  display: inline-block;
+  text-align: right;
 }
 
 .slider-indicators-row {

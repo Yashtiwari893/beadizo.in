@@ -125,18 +125,31 @@ export function validateCategory(payload: any): Validated<Record<string, unknown
 export function validateHeroSlide(payload: any): Validated<Record<string, unknown>> {
   if (!payload || typeof payload !== 'object') fail('Invalid hero slide payload.');
 
-  const headline = clampString(payload.headline, 200);
+  let headline = clampString(payload.headline, 200).replace(/\\n/g, '\n').trim();
   if (!headline) fail('Hero headline is required.');
+  if (headline.toLowerCase() === 'small beads big stories') {
+    headline = 'Small Beads\nBig Stories';
+  }
+
+  let watermark_text = clampString(payload.watermark_text, 120).replace(/\\n/g, '\n').trim();
+  if (watermark_text.toLowerCase() === 'more than jewellery') {
+    watermark_text = 'More than\nJewellery';
+  }
+
+  let button_text = clampString(payload.button_text, 60).trim();
+  if (button_text && !button_text.endsWith('→') && !button_text.endsWith('->')) {
+    button_text = `${button_text} →`;
+  }
 
   return {
     id: extractId(payload),
     record: {
-      tag: clampString(payload.tag, 80),
+      tag: clampString(payload.tag, 80) || 'HANDCRAFTED JEWELLERY',
       headline,
       description: clampString(payload.description, 500),
-      button_text: clampString(payload.button_text, 60),
+      button_text: button_text || 'EXPLORE COLLECTIONS →',
       button_link: safeLink(payload.button_link, '/collections'),
-      watermark_text: clampString(payload.watermark_text, 120),
+      watermark_text,
       image_url: safeImageUrl(payload.image_url, '/assets/hero_banner.png'),
       display_order: clampNumber(payload.display_order, { min: 0, max: 9999, fallback: 0 }),
       is_active: toBoolean(payload.is_active, true),
