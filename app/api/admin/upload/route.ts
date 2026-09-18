@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import sharp from 'sharp';
 import { getAdminClient, getSupabaseHost, BUCKET_NAME } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/lib/auth/session';
 import { clientKey, rateLimit } from '@/lib/auth/rateLimit';
@@ -89,10 +90,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'File size exceeds the 5MB limit.' }, { status: 413 });
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
+    const rawBuffer = Buffer.from(await file.arrayBuffer());
 
     // Authoritative check: the file's actual bytes must be a real raster image.
-    const detected = detectImage(buffer);
+    const detected = detectImage(rawBuffer);
     if (!detected) {
       return NextResponse.json(
         { error: 'Invalid image. Only real JPEG, PNG, WEBP, and GIF files are accepted.' },
@@ -100,13 +101,47 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // The stored filename is generated entirely by us. Nothing from the client
-    // (original name, extension, folder) reaches the storage path unvalidated,
-    // so path traversal and content-type confusion are both impossible.
-    const objectPath = `${folderInput}/${Date.now()}-${crypto.randomBytes(8).toString('hex')}.${detected.ext}`;
+    // Process & optimize with Sharp:
+    // 1. Auto-rotate based on EXIF (upright orientation for mobile uploads)
+    // 2. Cap width at 1600px with auto height (preserving aspect ratio, no enlargement)
+    // 3. Compress & convert to WebP at 80% quality (visually lossless, 60-80% smaller)
+    // 4. Preserve animation frames if an animated GIF is uploaded
+    let finalBuffer: Buffer;
+    let finalExt = 'webp';
+    let finalMime = 'image/webp';
+    const isAnimatedGif = detected.ext === 'gif';
 
-    const { error: uploadError } = await supabase.storage.from(BUCKET_NAME).upload(objectPath, buffer, {
-      contentType: detected.mime,
+    try {
+      let pipeline = sharp(rawBuffer, { animated: isAnimatedGif });
+
+      if (!isAnimatedGif) {
+        pipeline = pipeline.rotate();
+      }
+
+      pipeline = pipeline
+        .resize({
+          width: 1600,
+          withoutEnlargement: true,
+          fit: 'inside',
+        })
+        .webp({
+          quality: 80,
+          effort: 4,
+        });
+
+      finalBuffer = await pipeline.toBuffer();
+    } catch (sharpError: any) {
+      console.warn('[admin/upload] Sharp conversion failed; uploading validated raw buffer:', sharpError?.message || sharpError);
+      finalBuffer = rawBuffer;
+      finalExt = detected.ext;
+      finalMime = detected.mime;
+    }
+
+    // The stored filename is generated entirely by us.
+    const objectPath = `${folderInput}/${Date.now()}-${crypto.randomBytes(8).toString('hex')}.${finalExt}`;
+
+    const { error: uploadError } = await supabase.storage.from(BUCKET_NAME).upload(objectPath, finalBuffer, {
+      contentType: finalMime,
       cacheControl: '31536000',
       upsert: false,
     });
