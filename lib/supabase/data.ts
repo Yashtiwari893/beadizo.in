@@ -1,5 +1,5 @@
 import { supabase, isSupabaseConfigured } from './client';
-import { DbProduct, DbCategory, DbHeroSlide, DbPopupOffer, DbSiteSettings, DbContactSubmission, DbInstagramPost } from './types';
+import { DbProduct, DbCategory, DbHeroSlide, DbPopupOffer, DbSiteSettings, DbContactSubmission, DbInstagramPost, DbBlogPost } from './types';
 import { BEADIZO_PRODUCTS } from '@/data/products';
 import { safeLink, safeImageUrl } from '@/lib/security/sanitize';
 
@@ -28,6 +28,7 @@ const LOCAL_OFFERS_KEY = 'beadizo_cms_offers';
 const LOCAL_SETTINGS_KEY = 'beadizo_cms_settings';
 const LOCAL_INQUIRIES_KEY = 'beadizo_cms_inquiries';
 const LOCAL_INSTAGRAM_KEY = 'beadizo_cms_instagram';
+const LOCAL_BLOGS_KEY = 'beadizo_cms_blogs';
 
 // In-memory cache for instantaneous client navigation (0ms)
 interface CacheItem<T> {
@@ -36,6 +37,20 @@ interface CacheItem<T> {
 }
 const MEM_CACHE = new Map<string, CacheItem<any>>();
 const CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutes
+
+function getCache<T>(key: string): T | null {
+  const item = MEM_CACHE.get(key);
+  if (!item) return null;
+  if (Date.now() - item.timestamp > CACHE_TTL_MS) {
+    MEM_CACHE.delete(key);
+    return null;
+  }
+  return item.data as T;
+}
+
+function setCache<T>(key: string, data: T): void {
+  MEM_CACHE.set(key, { data, timestamp: Date.now() });
+}
 
 export function invalidateCache(prefix?: string) {
   if (!prefix) {
@@ -884,5 +899,224 @@ export async function generateProductAiContent(
 
   return data.result;
 }
+
+// ==============================================================================
+// 7. BLOG POSTS & SEO JOURNAL
+// ==============================================================================
+
+const DEFAULT_BLOG_POSTS: DbBlogPost[] = [
+  {
+    id: 'blog-1',
+    slug: 'the-art-of-handcrafted-beaded-jewellery',
+    title: 'The Art of Handcrafted Beaded Jewellery: Why Handmade Matters',
+    excerpt: 'Discover the patience, passion, and intricate artistry behind handcrafted bead jewellery. Explore why handmade pieces hold timeless emotional and aesthetic value.',
+    content: `In a world dominated by mass-produced accessories, handcrafted jewellery stands out as a breath of fresh air. At **Beadizo**, every bead is hand-strung, every knot is thoughtfully secured, and every design is born from passion and purpose.
+
+### The Soul in Every Bead
+Handmade bead jewellery is more than just an ornament—it is a wearable story. Unlike machine-molded pieces that lack individuality, artisan jewellery reflects the subtle nuances of human hands:
+- **Intricate Attention to Detail**: Each bead is selected for color harmony, shape consistency, and lustre.
+- **Durable Craftsmanship**: High-tensile cords, premium elastic threads, and secure clasps ensure lasting beauty.
+- **Unique Character**: No two handmade pieces are ever 100% identical, making your jewellery truly one-of-a-kind.
+
+### Sustainable & Thoughtful Gifting
+Choosing handmade also means supporting slow fashion and ethical creation. Whether you are treating yourself or gifting a loved one, a handcrafted beaded necklace or bracelet carries genuine sentiment.
+
+Explore our latest handcrafted arrivals and celebrate the beauty of Little Beads and Big Stories.`,
+    cover_image: '/assets/product_necklace.jpg',
+    tags: ['Handcrafted', 'Slow Fashion', 'Artisan Story', 'Styling'],
+    meta_title: 'The Art of Handcrafted Beaded Jewellery | Beadizo Journal',
+    meta_description: 'Explore why handcrafted beaded jewellery from Beadizo is the perfect blend of slow fashion, timeless artistry, and personal storytelling.',
+    is_published: true,
+    published_at: '2026-03-15T10:00:00Z',
+    read_time: '4 min read',
+    created_at: '2026-03-15T10:00:00Z',
+  },
+  {
+    id: 'blog-2',
+    slug: 'how-to-style-beaded-bracelets-everyday-festive',
+    title: 'How to Style Beaded Bracelets for Everyday Elegance & Festive Looks',
+    excerpt: 'From delicate wrist stacks to statement crystal pieces, master the art of styling beaded bracelets for office wear, casual outings, and traditional Indian celebrations.',
+    content: `Beaded bracelets are among the most versatile fashion accessories in your wardrobe. Whether you prefer a minimalist aesthetic or vibrant bohemian layers, here is your ultimate styling guide:
+
+### 1. The Everyday Minimalist Stack
+For workplace elegance or casual weekend coffee dates, less is often more:
+- Pair 1-2 slender glass bead bracelets with a classic metallic watch.
+- Stick to neutral tones: champagne, soft blush rose-gold, or earthy sand tones.
+
+### 2. Festive Glamour with Traditional Attire
+During wedding seasons, Diwali, or festive family gatherings, handcrafted beads add effortless royal charm:
+- Stack multi-toned crystal and pearl beads alongside metallic bangles.
+- Contrast deep jewel tones (emerald green, ruby red, sapphire blue) against pastel sarees or lehengas.
+
+### 3. Mixed Texture Layering
+Do not be afraid to combine different bead materials:
+- Pair natural matte gemstone beads with high-shine faceted crystals.
+- Add charm accents (evil eye, moon, stars) to introduce dynamic focal points.
+
+Discover your signature wrist stack in the Beadizo Bracelets Collection today!`,
+    cover_image: '/assets/product_bracelet.jpg',
+    tags: ['Style Guide', 'Bracelets', 'Festive Fashion', 'Stacking Tips'],
+    meta_title: 'How to Style Beaded Bracelets: Everyday & Festive Guide | Beadizo',
+    meta_description: 'Master the art of stacking and styling handcrafted beaded bracelets for work, casual outings, and festive occasions with Beadizo.',
+    is_published: true,
+    published_at: '2026-03-18T14:30:00Z',
+    read_time: '5 min read',
+    created_at: '2026-03-18T14:30:00Z',
+  },
+  {
+    id: 'blog-3',
+    slug: 'healing-crystals-and-bead-meanings',
+    title: 'The Meaning Behind Gemstones & Glass Beads: More Than Just Jewellery',
+    excerpt: 'Uncover the symbolism and emotional significance behind popular bead materials, from calming turquoise to protective evil eye charms and vibrant agates.',
+    content: `Throughout history, beads have been cherished not only for adornment but as talismans of protection, healing, and positive energy. When you wear a Beadizo piece, you carry these timeless meanings with you:
+
+### The Evil Eye Charm — Protection & Good Fortune
+The ancient Mediterranean symbol is renowned for warding off negativity, envy, and harmful intentions. Wearing an evil eye bead acts as a personal shield while infusing modern elegance into your daily ensemble.
+
+### Rose Quartz — Unconditional Love & Harmony
+Known as the stone of unconditional love, rose quartz beads promote self-compassion, emotional healing, and gentle warmth in relationships.
+
+### Turquoise & Ocean Blue — Calm & Clear Expression
+Blue beads evoke the serenity of the sea. They encourage calm mindfulness, clear communication, and grounding throughout busy days.
+
+### Celebrating Your Personal Talisman
+Jewellery becomes infinitely more precious when it connects with your spirit. Explore our symbolic bead collections and find the piece that resonates with your personal journey.`,
+    cover_image: '/assets/product_earring.jpg',
+    tags: ['Crystal Meanings', 'Evil Eye', 'Symbolism', 'Mindful Living'],
+    meta_title: 'Gemstone & Bead Meanings: Crystal Symbolism Guide | Beadizo',
+    meta_description: 'Learn the spiritual and emotional meanings behind evil eye charms, rose quartz, and crystal beads in Beadizo handcrafted jewellery.',
+    is_published: true,
+    published_at: '2026-03-20T09:15:00Z',
+    read_time: '6 min read',
+    created_at: '2026-03-20T09:15:00Z',
+  },
+];
+
+function normaliseBlogPost(raw: any): DbBlogPost {
+  return {
+    id: String(raw.id || `blog-${Date.now()}`),
+    slug: String(raw.slug || '').trim().toLowerCase(),
+    title: String(raw.title || 'Untitled Post').trim(),
+    excerpt: String(raw.excerpt || '').trim(),
+    content: String(raw.content || ''),
+    cover_image: safeImageUrl(raw.cover_image || '/assets/product_necklace.jpg'),
+    tags: Array.isArray(raw.tags) ? raw.tags.map((t: any) => String(t).trim()).filter(Boolean) : ['Handcrafted'],
+    meta_title: raw.meta_title ? String(raw.meta_title).trim() : undefined,
+    meta_description: raw.meta_description ? String(raw.meta_description).trim() : undefined,
+    is_published: typeof raw.is_published === 'boolean' ? raw.is_published : true,
+    published_at: raw.published_at || new Date().toISOString(),
+    read_time: raw.read_time || '4 min read',
+    created_at: raw.created_at || new Date().toISOString(),
+    updated_at: raw.updated_at || new Date().toISOString(),
+  };
+}
+
+export async function getBlogPosts(): Promise<DbBlogPost[]> {
+  const cached = getCache<DbBlogPost[]>('blogs:all');
+  if (cached) return cached;
+
+  if (!DEMO_MODE) {
+    try {
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .select('*')
+        .order('published_at', { ascending: false });
+
+      if (!error && Array.isArray(data) && data.length > 0) {
+        const normalised = data.map(normaliseBlogPost);
+        setCache('blogs:all', normalised);
+        return normalised;
+      }
+    } catch {
+      // Graceful fallback if table does not exist yet
+    }
+  }
+
+  const local = readLocal<DbBlogPost[]>(LOCAL_BLOGS_KEY);
+  const posts = local && local.length > 0 ? local.map(normaliseBlogPost) : [...DEFAULT_BLOG_POSTS];
+  setCache('blogs:all', posts);
+  return posts;
+}
+
+export async function getBlogPostBySlug(slug: string): Promise<DbBlogPost | null> {
+  const cleanSlug = slug.trim().toLowerCase();
+  const all = await getBlogPosts();
+  return all.find((p) => p.slug === cleanSlug && p.is_published) || null;
+}
+
+export async function saveBlogPost(post: Partial<DbBlogPost>): Promise<DbBlogPost> {
+  invalidateCache('blogs');
+
+  if (!DEMO_MODE) {
+    try {
+      const saved = await callAdminDataApi<DbBlogPost>('saveBlogPost', post);
+      return normaliseBlogPost(saved);
+    } catch {
+      // fallback to local below
+    }
+  }
+
+  const current = readLocal<DbBlogPost[]>(LOCAL_BLOGS_KEY) || [...DEFAULT_BLOG_POSTS];
+  const id = post.id || `blog-${Date.now()}`;
+  const item = normaliseBlogPost({
+    ...DEFAULT_BLOG_POSTS[0],
+    ...post,
+    id,
+    updated_at: new Date().toISOString(),
+  });
+
+  const idx = current.findIndex((p) => p.id === id);
+  if (idx > -1) current[idx] = item;
+  else current.unshift(item);
+
+  writeLocal(LOCAL_BLOGS_KEY, current);
+  return item;
+}
+
+export async function deleteBlogPost(id: string): Promise<boolean> {
+  invalidateCache('blogs');
+
+  if (!DEMO_MODE) {
+    try {
+      await callAdminDataApi('deleteBlogPost', { id });
+      return true;
+    } catch {
+      // fallback
+    }
+  }
+
+  const current = readLocal<DbBlogPost[]>(LOCAL_BLOGS_KEY) || [...DEFAULT_BLOG_POSTS];
+  writeLocal(LOCAL_BLOGS_KEY, current.filter((p) => p.id !== id));
+  return true;
+}
+
+export async function generateBlogAiPost(
+  topic: string,
+  keywords?: string
+): Promise<{
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  tags: string[];
+  meta_title?: string;
+  meta_description?: string;
+  read_time?: string;
+}> {
+  const res = await fetch('/api/admin/ai-generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: 'blog', title: topic, existingDescription: keywords }),
+    credentials: 'same-origin',
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to generate AI blog article.');
+  }
+
+  return data.result;
+}
+
 
 

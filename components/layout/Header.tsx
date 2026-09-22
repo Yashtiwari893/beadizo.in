@@ -22,6 +22,7 @@ export default function Header() {
   const isWomenActive = isCollections && currentGender === 'women';
   const isMenActive = isCollections && currentGender === 'men';
   const isAboutActive = pathname === '/about';
+  const isBlogActive = pathname?.startsWith('/blog');
   const isContactActive = pathname === '/contact';
 
   useEffect(() => {
@@ -103,6 +104,9 @@ export default function Header() {
           </Link>
           <Link href="/about" prefetch={true} onClick={(e) => handleNavClick(e, '/about')} className={isAboutActive ? 'active' : ''}>
             About
+          </Link>
+          <Link href="/blog" prefetch={true} onClick={(e) => handleNavClick(e, '/blog')} className={isBlogActive ? 'active' : ''}>
+            Journal
           </Link>
           <Link href="/contact" prefetch={true} onClick={(e) => handleNavClick(e, '/contact')} className={isContactActive ? 'active' : ''}>
             Contact

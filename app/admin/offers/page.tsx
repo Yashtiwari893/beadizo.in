@@ -133,6 +133,7 @@ export default function AdminOffersPage() {
     <div>
       {/* Header */}
       <div
+        className="admin-page-header"
         style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -151,7 +152,7 @@ export default function AdminOffersPage() {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div className="admin-header-actions" style={{ display: 'flex', gap: '10px' }}>
           <button
             type="button"
             onClick={handleCreateNew}
@@ -217,7 +218,7 @@ export default function AdminOffersPage() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '24px', alignItems: 'start' }}>
+      <div className="admin-offers-layout" style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '24px', alignItems: 'start' }}>
         {/* Left column: Offer List */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div
@@ -262,7 +263,7 @@ export default function AdminOffersPage() {
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: isSelected ? '#DFBDB5' : '#FFFFFF' }}>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: isSelected ? '#DFBDB5' : '#FFFFFF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '8px' }}>
                           {offer.title || 'Untitled Offer'}
                         </span>
                         <button
@@ -306,7 +307,7 @@ export default function AdminOffersPage() {
 
         {/* Right column: Editor & Preview */}
         {activeOffer ? (
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.9fr', gap: '24px', alignItems: 'start' }}>
+          <div className="admin-offers-editor-grid" style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.9fr', gap: '24px', alignItems: 'start' }}>
             {/* Edit Form */}
             <div
               style={{
@@ -447,7 +448,7 @@ export default function AdminOffersPage() {
                 <label style={{ display: 'block', fontSize: '0.78rem', color: '#A6A6B2', marginBottom: '6px' }}>
                   Promotional Creative Image (Optional)
                 </label>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <div className="admin-upload-row" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                   <input
                     type="text"
                     value={activeOffer.image_url || ''}
@@ -455,6 +456,8 @@ export default function AdminOffersPage() {
                     placeholder="/assets/offer_banner.jpg or https://..."
                     style={{
                       flex: 1,
+                      minWidth: 0,
+                      width: '100%',
                       padding: '10px 14px',
                       background: '#1B1B22',
                       border: '1px solid rgba(255,255,255,0.1)',
@@ -463,7 +466,7 @@ export default function AdminOffersPage() {
                       fontSize: '0.85rem',
                     }}
                   />
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                  <div className="admin-upload-btn-group" style={{ display: 'flex', gap: '8px' }}>
                     <label
                       style={{
                         padding: '10px 16px',
@@ -509,7 +512,7 @@ export default function AdminOffersPage() {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              <div className="admin-two-col-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.78rem', color: '#A6A6B2', marginBottom: '6px' }}>
                     Button Text

@@ -73,6 +73,7 @@ export default function AdminSettingsPage() {
     <div>
       {/* Header */}
       <div
+        className="admin-page-header"
         style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -92,6 +93,7 @@ export default function AdminSettingsPage() {
         </div>
 
         <button
+          className="admin-header-save-btn"
           type="button"
           onClick={handleSave}
           disabled={saving}
@@ -149,7 +151,7 @@ export default function AdminSettingsPage() {
             <span>Contact & WhatsApp Ordering</span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+          <div className="admin-contact-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.78rem', color: '#A6A6B2', marginBottom: '6px' }}>
                 WhatsApp Phone Number (with country code, e.g. 919324556148)
@@ -249,7 +251,7 @@ export default function AdminSettingsPage() {
               />
             </div>
 
-            <div style={{ maxWidth: '300px' }}>
+            <div className="admin-threshold-input" style={{ maxWidth: '300px' }}>
               <label style={{ display: 'block', fontSize: '0.78rem', color: '#A6A6B2', marginBottom: '6px' }}>
                 Free Shipping Threshold Amount (₹)
               </label>
@@ -287,7 +289,7 @@ export default function AdminSettingsPage() {
             <span>Homepage Story Section: "Jewellery That Feels Like You"</span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '20px', alignItems: 'start' }}>
+          <div className="admin-settings-section-grid" style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '20px', alignItems: 'start' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.78rem', color: '#A6A6B2', marginBottom: '6px' }}>
@@ -336,7 +338,7 @@ export default function AdminSettingsPage() {
                 <label style={{ display: 'block', fontSize: '0.78rem', color: '#A6A6B2', marginBottom: '6px' }}>
                   Editorial Image URL or Upload
                 </label>
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div className="admin-upload-row" style={{ display: 'flex', gap: '8px' }}>
                   <input
                     type="text"
                     value={settings.editorial_image_url || ''}
@@ -344,6 +346,8 @@ export default function AdminSettingsPage() {
                     placeholder="/assets/jewellery_feels_like_you.png"
                     style={{
                       flex: 1,
+                      minWidth: 0,
+                      width: '100%',
                       padding: '10px 14px',
                       background: '#1B1B22',
                       border: '1px solid rgba(255,255,255,0.1)',
@@ -352,7 +356,7 @@ export default function AdminSettingsPage() {
                       fontSize: '0.85rem',
                     }}
                   />
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                  <div className="admin-upload-btn-group" style={{ display: 'flex', gap: '8px' }}>
                     <label
                       style={{
                         padding: '10px 14px',
@@ -435,7 +439,7 @@ export default function AdminSettingsPage() {
             <span>Homepage Craft Banner: "More Than Jewellery"</span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '20px', alignItems: 'start' }}>
+          <div className="admin-settings-section-grid" style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '20px', alignItems: 'start' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.78rem', color: '#A6A6B2', marginBottom: '6px' }}>
@@ -484,7 +488,7 @@ export default function AdminSettingsPage() {
                 <label style={{ display: 'block', fontSize: '0.78rem', color: '#A6A6B2', marginBottom: '6px' }}>
                   Craft Banner Image URL or Upload
                 </label>
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div className="admin-upload-row" style={{ display: 'flex', gap: '8px' }}>
                   <input
                     type="text"
                     value={settings.craft_image_url || ''}
@@ -492,6 +496,8 @@ export default function AdminSettingsPage() {
                     placeholder="/assets/more_than_jewellery.png"
                     style={{
                       flex: 1,
+                      minWidth: 0,
+                      width: '100%',
                       padding: '10px 14px',
                       background: '#1B1B22',
                       border: '1px solid rgba(255,255,255,0.1)',
@@ -500,7 +506,7 @@ export default function AdminSettingsPage() {
                       fontSize: '0.85rem',
                     }}
                   />
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                  <div className="admin-upload-btn-group" style={{ display: 'flex', gap: '8px' }}>
                     <label
                       style={{
                         padding: '10px 14px',

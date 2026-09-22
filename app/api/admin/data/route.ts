@@ -246,6 +246,39 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true });
       }
 
+      // ------------------------------------------------------------ Blog posts
+      case 'saveBlogPost': {
+        const post = payload as any;
+        const id = post?.id;
+        const record = {
+          slug: String(post?.slug || '').trim().toLowerCase(),
+          title: String(post?.title || '').trim(),
+          excerpt: String(post?.excerpt || '').trim(),
+          content: String(post?.content || ''),
+          cover_image: String(post?.cover_image || ''),
+          tags: Array.isArray(post?.tags) ? post.tags : [],
+          meta_title: post?.meta_title || null,
+          meta_description: post?.meta_description || null,
+          is_published: typeof post?.is_published === 'boolean' ? post.is_published : true,
+          read_time: post?.read_time || '4 min read',
+          updated_at: new Date().toISOString(),
+        };
+        const query = id && !id.startsWith('blog-')
+          ? supabase.from('blog_posts').update(record).eq('id', id).select().single()
+          : supabase.from('blog_posts').insert([record]).select().single();
+
+        const { data, error } = await query;
+        if (error) throw error;
+        return NextResponse.json({ data });
+      }
+
+      case 'deleteBlogPost': {
+        const id = validateDeleteId(payload);
+        const { error } = await supabase.from('blog_posts').delete().eq('id', id);
+        if (error) throw error;
+        return NextResponse.json({ success: true });
+      }
+
       // -------------------------------------------------- Contact Submissions
       case 'getContactSubmissions': {
         const { data, error } = await supabase

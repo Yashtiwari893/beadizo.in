@@ -115,6 +115,7 @@ export default function Footer() {
               <Link href="/">Home</Link>
               <Link href="/collections">Collections</Link>
               <Link href="/collections">Shop</Link>
+              <Link href="/blog">Journal</Link>
               <Link href="/about">About</Link>
               <Link href="/contact">Contact</Link>
             </div>

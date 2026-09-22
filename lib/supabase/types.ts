@@ -92,3 +92,20 @@ export interface DbInstagramPost {
   created_at?: string;
 }
 
+export interface DbBlogPost {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  cover_image: string;
+  tags: string[];
+  meta_title?: string;
+  meta_description?: string;
+  is_published: boolean;
+  published_at?: string;
+  read_time?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+

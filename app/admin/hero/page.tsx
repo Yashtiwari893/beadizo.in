@@ -68,7 +68,7 @@ export default function AdminHeroPage() {
   return (
     <div>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '14px' }}>
+      <div className="admin-page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '14px' }}>
         <div>
           <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.8rem', color: '#FFFFFF', margin: '0 0 4px' }}>
             Hero Banner Manager
@@ -79,6 +79,7 @@ export default function AdminHeroPage() {
         </div>
 
         <button
+          className="admin-header-save-btn"
           type="button"
           onClick={handleSave}
           disabled={saving}
@@ -121,7 +122,7 @@ export default function AdminHeroPage() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: '24px', alignItems: 'start' }}>
+      <div className="admin-hero-grid" style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: '24px', alignItems: 'start' }}>
         {/* Editor Form */}
         <div style={{ background: '#141419', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
           {/* Background Image */}
@@ -129,11 +130,11 @@ export default function AdminHeroPage() {
             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#DFBDB5', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Hero Background Image
             </label>
-            <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
-              <div style={{ position: 'relative', width: '120px', height: '70px', borderRadius: '6px', overflow: 'hidden', background: '#1F1F26', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <div className="admin-hero-img-row" style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+              <div className="admin-hero-thumb" style={{ position: 'relative', width: '120px', height: '70px', borderRadius: '6px', overflow: 'hidden', background: '#1F1F26', border: '1px solid rgba(255,255,255,0.1)', flexShrink: 0 }}>
                 <img src={activeSlide.image_url} alt="Hero Banner" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1, minWidth: 0, width: '100%' }}>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   <label
                     style={{
@@ -275,7 +276,7 @@ export default function AdminHeroPage() {
           </div>
 
           {/* Button Text & Link */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div className="admin-two-col-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.78rem', color: '#A6A6B2', marginBottom: '6px' }}>
                 Button Text

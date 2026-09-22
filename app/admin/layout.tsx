@@ -21,6 +21,7 @@ import {
   X,
   Loader2,
   MessageSquare,
+  BookOpen,
   Sun,
   Moon,
 } from 'lucide-react';
@@ -163,6 +164,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
     { label: 'Hero Banners', href: '/admin/hero', icon: ImageIcon },
     { label: 'Instagram Feed', href: '/admin/instagram', icon: InstagramIcon },
     { label: 'Popup Offers', href: '/admin/offers', icon: Tag },
+    { label: 'Blog Stories', href: '/admin/blogs', icon: BookOpen },
     { label: 'Site Settings', href: '/admin/settings', icon: Settings },
   ];
 
@@ -283,14 +285,34 @@ function AdminShell({ children }: { children: React.ReactNode }) {
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
     }
 
-    /* ------- Sub-boxes, Secondary Card Backgrounds (#1F1F26 → #F0F1F3) ------- */
+    /* ------- Sub-boxes, Secondary Card Backgrounds, Inputs (#1F1F26, #1B1B22, #101014 → #F0F1F3) ------- */
     .admin-main-content [style*="background: #1F1F26"],
     .admin-main-content [style*="background:#1F1F26"],
+    .admin-main-content [style*="background: #1B1B22"],
+    .admin-main-content [style*="background:#1B1B22"],
+    .admin-main-content [style*="background: #101014"],
+    .admin-main-content [style*="background:#101014"],
     .admin-main-content [style*="background: rgb(31, 31, 38)"],
-    .admin-main-content [style*="background-color: rgb(31, 31, 38)"] {
+    .admin-main-content [style*="background-color: rgb(31, 31, 38)"],
+    .admin-main-content [style*="background: rgb(27, 27, 34)"],
+    .admin-main-content [style*="background-color: rgb(27, 27, 34)"] {
       background: #F0F1F3 !important;
       background-color: #F0F1F3 !important;
       border-color: rgba(0, 0, 0, 0.12) !important;
+      color: #1A1A2E !important;
+    }
+
+    /* Form controls in light mode */
+    .admin-main-content input:not([type="checkbox"]):not([type="radio"]),
+    .admin-main-content textarea,
+    .admin-main-content select {
+      background: #F4F5F7 !important;
+      color: #1A1A2E !important;
+      border-color: rgba(0, 0, 0, 0.12) !important;
+    }
+    .admin-main-content input::placeholder,
+    .admin-main-content textarea::placeholder {
+      color: #8E8E9D !important;
     }
 
     /* ------- Preserve Rose-Gold Primary CTA Buttons ------- */
@@ -451,6 +473,96 @@ function AdminShell({ children }: { children: React.ReactNode }) {
     /* Nav hover effect */
     .admin-nav-link:hover {
       background: ${t.accentHover} !important;
+    }
+
+    /* ===== Responsive Overhauls: Hero, Offers, and Settings ===== */
+
+    /* Tablet & Medium Breakpoint (<= 1024px) */
+    @media (max-width: 1024px) {
+      .admin-hero-grid {
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+      }
+      .admin-offers-layout {
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+      }
+    }
+
+    /* Intermediate Breakpoint (<= 960px) */
+    @media (max-width: 960px) {
+      .admin-offers-editor-grid {
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+      }
+      .admin-settings-section-grid {
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+      }
+    }
+
+    /* Mobile Breakpoint (<= 640px) */
+    @media (max-width: 640px) {
+      .admin-two-col-grid {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+      }
+      .admin-contact-grid {
+        grid-template-columns: 1fr !important;
+        gap: 14px !important;
+      }
+      .admin-upload-row {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+      }
+      .admin-upload-row input {
+        width: 100% !important;
+      }
+      .admin-upload-btn-group {
+        display: flex !important;
+        width: 100% !important;
+        gap: 8px !important;
+      }
+      .admin-upload-btn-group > * {
+        flex: 1 !important;
+        justify-content: center !important;
+        text-align: center !important;
+      }
+      .admin-threshold-input {
+        max-width: 100% !important;
+      }
+    }
+
+    /* Small Mobile Breakpoint (<= 540px) */
+    @media (max-width: 540px) {
+      .admin-page-header {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+      }
+      .admin-header-actions {
+        display: flex !important;
+        width: 100% !important;
+        gap: 8px !important;
+      }
+      .admin-header-actions > button {
+        flex: 1 !important;
+        justify-content: center !important;
+      }
+      .admin-header-save-btn {
+        width: 100% !important;
+        justify-content: center !important;
+      }
+      .admin-hero-img-row {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+      }
+      .admin-hero-thumb {
+        width: 100% !important;
+        height: 120px !important;
+      }
     }
   `;
 

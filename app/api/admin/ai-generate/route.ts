@@ -5,7 +5,7 @@ import { clientKey, rateLimit } from '@/lib/auth/rateLimit';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-async function callGroqAI(prompt: string): Promise<string> {
+async function callGroqAI(prompt: string, maxTokens = 400): Promise<string> {
   const apiKey = process.env.GROQ_API_KEY?.trim();
   if (!apiKey) throw new Error('NO_API_KEY');
 
@@ -41,7 +41,7 @@ async function callGroqAI(prompt: string): Promise<string> {
             },
           ],
           temperature: 0.6,
-          max_tokens: 350,
+          max_tokens: maxTokens,
         }),
       });
 
@@ -67,7 +67,7 @@ async function callGroqAI(prompt: string): Promise<string> {
 }
 
 
-async function callGeminiAI(prompt: string): Promise<string> {
+async function callGeminiAI(prompt: string, maxTokens = 1200): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) throw new Error('NO_API_KEY');
 
@@ -96,7 +96,7 @@ async function callGeminiAI(prompt: string): Promise<string> {
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: {
               temperature: 0.6,
-              maxOutputTokens: 1000,
+              maxOutputTokens: maxTokens,
               thinkingConfig: {
                 thinkingBudget: 0,
               },
@@ -119,7 +119,7 @@ async function callGeminiAI(prompt: string): Promise<string> {
 
       const data = await res.json();
       const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (typeof text === 'string') return text;
+      if (typeof text === 'string' && text.trim().length > 0) return text;
     } catch (err: any) {
       if (err.message === 'INVALID_API_KEY' || err.message === 'AI_RATE_LIMIT') {
         throw err;
@@ -131,7 +131,7 @@ async function callGeminiAI(prompt: string): Promise<string> {
   throw lastError || new Error('Failed to generate with Gemini.');
 }
 
-async function generateWithAI(prompt: string): Promise<string> {
+async function generateWithAI(prompt: string, maxTokens = 400): Promise<string> {
   const hasGroq = Boolean(process.env.GROQ_API_KEY?.trim());
   const hasGemini = Boolean(process.env.GEMINI_API_KEY?.trim());
 
@@ -139,14 +139,14 @@ async function generateWithAI(prompt: string): Promise<string> {
     throw new Error('NO_API_KEY');
   }
 
-  // 1. First priority: Groq (Ultra-fast)
+  // 1. Primary: Groq
   if (hasGroq) {
     try {
-      const result = await callGroqAI(prompt);
-      if (result && result.trim().length > 0) {
-        return result;
-      }
+      return await callGroqAI(prompt, maxTokens);
     } catch (groqErr: any) {
+      if (groqErr.message === 'INVALID_API_KEY' || groqErr.message === 'AI_RATE_LIMIT') {
+        console.warn(`[admin/ai-generate] Groq failed with ${groqErr.message}, falling back to Gemini...`);
+      }
       console.warn(
         '[admin/ai-generate] Groq primary failed, falling back to Gemini:',
         groqErr?.message || groqErr
@@ -160,7 +160,7 @@ async function generateWithAI(prompt: string): Promise<string> {
   // 2. Fallback: Google Gemini
   if (hasGemini) {
     try {
-      return await callGeminiAI(prompt);
+      return await callGeminiAI(prompt, Math.max(maxTokens, 1200));
     } catch (geminiErr: any) {
       console.error('[admin/ai-generate] Gemini fallback also failed:', geminiErr?.message || geminiErr);
       throw geminiErr;
@@ -199,26 +199,66 @@ export async function POST(request: NextRequest) {
   const existingDescription =
     typeof body?.existingDescription === 'string' ? body.existingDescription.trim() : '';
 
-  if (type !== 'description' && type !== 'features') {
+  if (type !== 'description' && type !== 'features' && type !== 'blog') {
     return NextResponse.json(
-      { error: "Invalid type. Must be 'description' or 'features'." },
+      { error: "Invalid type. Must be 'description', 'features', or 'blog'." },
       { status: 400 }
     );
   }
 
   if (!title || title.length < 2) {
     return NextResponse.json(
-      { error: 'Product title is required to generate AI content.' },
+      { error: 'Topic or title is required to generate AI content.' },
       { status: 400 }
     );
   }
 
   if (title.length > 200) {
-    return NextResponse.json({ error: 'Product title is too long (max 200 characters).' }, { status: 400 });
+    return NextResponse.json({ error: 'Title is too long (max 200 characters).' }, { status: 400 });
   }
 
   try {
-    if (type === 'description') {
+    if (type === 'blog') {
+      const prompt = `Write an in-depth, high-engagement, and SEO-optimized blog article for Beadizo, an artisan handcrafted beaded jewellery brand (tagline: "Small Beads, Big Stories").
+Topic / Working Headline: "${title}"
+${existingDescription ? `Additional focus points / keywords: "${existingDescription}"` : ''}
+
+You MUST return your response as a valid JSON object ONLY, with no preamble, markdown ticks or formatting outside the JSON:
+{
+  "title": "A captivating, high-CTR article headline (under 70 chars)",
+  "slug": "url-friendly-kebab-case-slug",
+  "excerpt": "A compelling 2-sentence summary of the article for search results and social cards (around 150 chars)",
+  "content": "A comprehensive, beautifully written article (approx 400-600 words) using markdown headers (### Subheading), bullet points (- Point), styling advice, and heartfelt storytelling. Conclude with a warm closing thought.",
+  "tags": ["Tag1", "Tag2", "Tag3", "Tag4"],
+  "meta_title": "SEO Page Title | Beadizo Journal (under 60 chars)",
+  "meta_description": "SEO Meta Description packed with natural search keywords (under 160 chars)",
+  "read_time": "5 min read"
+}`;
+
+      const rawOutput = await generateWithAI(prompt, 1500);
+      let blogData: any = null;
+      try {
+        const jsonMatch = rawOutput.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          blogData = JSON.parse(jsonMatch[0]);
+        } else {
+          blogData = JSON.parse(rawOutput);
+        }
+      } catch {
+        blogData = {
+          title,
+          slug: title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+          excerpt: `Discover the art and styling secrets of ${title} with Beadizo handcrafted jewellery.`,
+          content: rawOutput.replace(/```json/gi, '').replace(/```/g, '').trim(),
+          tags: ['Handcrafted', 'Styling', 'Beadizo'],
+          meta_title: `${title} | Beadizo Journal`,
+          meta_description: `Learn more about ${title} and handcrafted beaded jewellery styling tips from Beadizo.`,
+          read_time: '4 min read',
+        };
+      }
+
+      return NextResponse.json({ result: blogData });
+    } else if (type === 'description') {
       const prompt = `Write a compelling, SEO-optimized product description for an e-commerce jewellery listing.
 Product Title: "${title}"
 URL Slug: "${slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}"

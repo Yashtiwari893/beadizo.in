@@ -38,7 +38,7 @@ export interface MediaLibraryPickerProps {
   onSelect: (url: string) => void;
   multiSelect?: boolean;
   onSelectMultiple?: (urls: string[]) => void;
-  defaultFolder?: 'products' | 'categories' | 'hero' | 'offers' | 'settings' | 'instagram';
+  defaultFolder?: 'products' | 'categories' | 'hero' | 'offers' | 'settings' | 'instagram' | 'blogs';
   aspectRatio?: number; // e.g. 1 for square, 16/9 for banner, 4/5 for insta
   title?: string;
 }

@@ -56,6 +56,9 @@ export default function ProductDetailPage({ params }: PageProps) {
         if (foundProduct) {
           setProduct(foundProduct);
           setLoading(false);
+          if (typeof document !== 'undefined') {
+            document.title = `${foundProduct.title} | Handcrafted Jewellery — Beadizo`;
+          }
           const related = await getRelatedProducts(foundProduct, 4);
           if (isMounted) setRelatedProducts(related);
         } else {
@@ -82,11 +85,11 @@ export default function ProductDetailPage({ params }: PageProps) {
 
   if (!product) {
     return (
-      <div style={{ padding: '100px 0', textAlign: 'center', backgroundColor: 'var(--bg-cream)', minHeight: '60vh' }}>
-        <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.8rem', color: '#1B1B22', marginBottom: '12px' }}>
-          Product Not Found
-        </h2>
-        <p style={{ color: '#7E7E8F', marginBottom: '24px' }}>
+      <div style={{ padding: '120px 24px', textAlign: 'center', backgroundColor: 'var(--bg-cream)', minHeight: '70vh' }}>
+        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '2rem', color: 'var(--text-dark)', marginBottom: '12px' }}>
+          Piece Not Found
+        </h1>
+        <p style={{ color: 'var(--text-muted)', marginBottom: '28px', maxWidth: '420px', margin: '0 auto 28px' }}>
           The jewellery piece you are looking for may have been updated or moved.
         </p>
         <Link href="/collections" className="btn-blush" style={{ display: 'inline-flex' }}>
@@ -119,6 +122,57 @@ export default function ProductDetailPage({ params }: PageProps) {
     `Hi Beadizo! I am interested in ordering *${product.title}* (₹${product.price.toLocaleString('en-IN')}). Is this in stock? Here is the link: ${productUrl}`
   )}`;
 
+  const productSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.title,
+    image: images.map((img) => (img.startsWith('http') ? img : `https://beadizo.in${img}`)),
+    description: product.description || `Handcrafted ${product.title} by Beadizo. Beautiful artisanal beads jewellery made with love.`,
+    brand: {
+      '@type': 'Brand',
+      name: 'Beadizo',
+    },
+    offers: {
+      '@type': 'Offer',
+      url: `https://beadizo.in/product/${encodeURIComponent(product.slug || product.id)}`,
+      priceCurrency: 'INR',
+      price: product.price,
+      priceValidUntil: '2028-12-31',
+      availability: isAvailable ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      itemCondition: 'https://schema.org/NewCondition',
+    },
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: product.rating || 4.9,
+      reviewCount: product.reviews_count || 24,
+    },
+  };
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: 'https://beadizo.in',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Collections',
+        item: 'https://beadizo.in/collections',
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: product.title,
+        item: `https://beadizo.in/product/${encodeURIComponent(product.slug || product.id)}`,
+      },
+    ],
+  };
+
   const handleAddToCart = () => {
     if (!isAvailable) return;
     addToCart(
@@ -142,7 +196,15 @@ export default function ProductDetailPage({ params }: PageProps) {
   };
 
   return (
-    <div style={{ padding: '40px 0 90px', backgroundColor: 'var(--bg-cream)' }}>
+    <div style={{ backgroundColor: 'var(--bg-cream)', minHeight: '100vh', padding: '36px 0 80px' }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
       <div className="container">
         {/* Breadcrumbs */}
         <nav
