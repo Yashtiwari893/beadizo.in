@@ -8,6 +8,7 @@ import {
   safeLink,
   safeImageUrl,
   MAX_LONG_TEXT,
+  MAX_POLICY_TEXT,
 } from '@/lib/security/sanitize';
 
 /**
@@ -252,6 +253,11 @@ export function validateSiteSettings(payload: any): Record<string, unknown> {
   if ('craft_headline' in payload) out.craft_headline = clampString(payload.craft_headline, 200);
   if ('craft_description' in payload) out.craft_description = clampString(payload.craft_description, 1000);
   if ('craft_image_url' in payload) out.craft_image_url = safeImageUrl(payload.craft_image_url);
+  if ('privacy_policy' in payload) out.privacy_policy = clampString(payload.privacy_policy, MAX_POLICY_TEXT);
+  if ('refund_policy' in payload) out.refund_policy = clampString(payload.refund_policy, MAX_POLICY_TEXT);
+  if ('terms_conditions' in payload) out.terms_conditions = clampString(payload.terms_conditions, MAX_POLICY_TEXT);
+  if ('shipping_policy' in payload) out.shipping_policy = clampString(payload.shipping_policy, MAX_POLICY_TEXT);
+  if ('policies_updated_at' in payload) out.policies_updated_at = clampString(payload.policies_updated_at, 50) || new Date().toISOString();
 
   return out;
 }

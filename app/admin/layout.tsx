@@ -22,6 +22,7 @@ import {
   Loader2,
   MessageSquare,
   BookOpen,
+  ShieldCheck,
   Sun,
   Moon,
 } from 'lucide-react';
@@ -165,6 +166,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
     { label: 'Instagram Feed', href: '/admin/instagram', icon: InstagramIcon },
     { label: 'Popup Offers', href: '/admin/offers', icon: Tag },
     { label: 'Blog Stories', href: '/admin/blogs', icon: BookOpen },
+    { label: 'Legal Policies', href: '/admin/policies', icon: ShieldCheck },
     { label: 'Site Settings', href: '/admin/settings', icon: Settings },
   ];
 

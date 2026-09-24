@@ -6,6 +6,7 @@
 /** Hard ceiling applied to any free-text field, to prevent long-input DoS. */
 export const MAX_TEXT = 500;
 export const MAX_LONG_TEXT = 5000;
+export const MAX_POLICY_TEXT = 100_000;
 
 /**
  * Coerces to a trimmed string and clamps its length.

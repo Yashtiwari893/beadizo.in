@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import {
   Save,
   Loader2,
@@ -10,6 +11,8 @@ import {
   Sparkles,
   Upload,
   Image as ImageIcon,
+  ShieldCheck,
+  ArrowRight,
 } from 'lucide-react';
 import { getSiteSettings, saveSiteSettings } from '@/lib/supabase/data';
 import { DbSiteSettings } from '@/lib/supabase/types';
@@ -135,6 +138,66 @@ export default function AdminSettingsPage() {
           <span>Settings saved successfully! Storefront header, footer, and banners updated.</span>
         </div>
       )}
+
+      {/* Quick link banner to Legal Policies */}
+      <div
+        style={{
+          background: 'rgba(223, 189, 181, 0.08)',
+          border: '1px solid rgba(223, 189, 181, 0.25)',
+          borderRadius: '10px',
+          padding: '16px 20px',
+          marginBottom: '24px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '12px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div
+            style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '8px',
+              backgroundColor: 'rgba(223, 189, 181, 0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#DFBDB5',
+            }}
+          >
+            <ShieldCheck size={20} />
+          </div>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: '0.92rem', color: '#FFFFFF', marginBottom: '2px' }}>
+              Manage Store Legal Policies &amp; Disclosures
+            </div>
+            <div style={{ fontSize: '0.8rem', color: '#A6A6B2' }}>
+              Edit live content for Privacy Policy, Refund &amp; Exchange, Terms &amp; Conditions, and Shipping Policy.
+            </div>
+          </div>
+        </div>
+
+        <Link
+          href="/admin/policies"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '8px 16px',
+            borderRadius: '6px',
+            backgroundColor: '#DFBDB5',
+            color: '#0A0A0C',
+            fontSize: '0.82rem',
+            fontWeight: 700,
+            textDecoration: 'none',
+          }}
+        >
+          <span>Open Legal Policies</span>
+          <ArrowRight size={14} />
+        </Link>
+      </div>
 
       <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {/* Contact & Ordering Info */}

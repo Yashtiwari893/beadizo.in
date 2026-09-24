@@ -68,6 +68,11 @@ export interface DbSiteSettings {
   craft_headline?: string;
   craft_description?: string;
   craft_image_url?: string;
+  privacy_policy?: string;
+  refund_policy?: string;
+  terms_conditions?: string;
+  shipping_policy?: string;
+  policies_updated_at?: string;
   updated_at?: string;
 }
 

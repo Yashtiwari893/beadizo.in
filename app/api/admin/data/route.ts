@@ -223,7 +223,29 @@ export async function POST(request: NextRequest) {
           .upsert(record, { onConflict: 'id' })
           .select()
           .single();
-        if (error) throw error;
+        if (error) {
+          // If policy columns haven't been added to Postgres yet (code 42703 = undefined_column)
+          if ((error as any).code === '42703') {
+            console.warn('[admin/data] Policy columns missing in site_settings table. Falling back to core columns.');
+            const coreRecord = { ...record };
+            delete (coreRecord as any).privacy_policy;
+            delete (coreRecord as any).refund_policy;
+            delete (coreRecord as any).terms_conditions;
+            delete (coreRecord as any).shipping_policy;
+            delete (coreRecord as any).policies_updated_at;
+            const fallback = await supabase
+              .from('site_settings')
+              .upsert(coreRecord, { onConflict: 'id' })
+              .select()
+              .single();
+            if (fallback.error) throw fallback.error;
+            return NextResponse.json({
+              data: { ...record, ...fallback.data },
+              warning: 'Policy columns not yet migrated in Supabase. Run migration_legal_policies.sql in your Supabase SQL editor.',
+            });
+          }
+          throw error;
+        }
         return NextResponse.json({ data });
       }
 

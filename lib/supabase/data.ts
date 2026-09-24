@@ -2,6 +2,12 @@ import { supabase, isSupabaseConfigured } from './client';
 import { DbProduct, DbCategory, DbHeroSlide, DbPopupOffer, DbSiteSettings, DbContactSubmission, DbInstagramPost, DbBlogPost } from './types';
 import { BEADIZO_PRODUCTS } from '@/data/products';
 import { safeLink, safeImageUrl } from '@/lib/security/sanitize';
+import {
+  DEFAULT_PRIVACY_POLICY,
+  DEFAULT_REFUND_POLICY,
+  DEFAULT_TERMS_CONDITIONS,
+  DEFAULT_SHIPPING_POLICY,
+} from '@/lib/legal/defaultPolicies';
 
 /**
  * Storefront + admin data access.
@@ -626,6 +632,10 @@ const DEFAULT_SETTINGS: DbSiteSettings = {
   craft_description:
     'Every bead tells a story – of tradition, craftsmanship and the little moments that make life beautiful.',
   craft_image_url: '/assets/more_than_jewellery.png',
+  privacy_policy: DEFAULT_PRIVACY_POLICY,
+  refund_policy: DEFAULT_REFUND_POLICY,
+  terms_conditions: DEFAULT_TERMS_CONDITIONS,
+  shipping_policy: DEFAULT_SHIPPING_POLICY,
 };
 
 export async function getSiteSettings(): Promise<DbSiteSettings> {
@@ -649,11 +659,15 @@ export async function getSiteSettings(): Promise<DbSiteSettings> {
 
   if (!data) return cached?.data || DEFAULT_SETTINGS;
 
-  const result = {
+  const result: DbSiteSettings = {
     ...DEFAULT_SETTINGS,
     ...data,
     editorial_image_url: safeImageUrl(data.editorial_image_url, DEFAULT_SETTINGS.editorial_image_url),
     craft_image_url: safeImageUrl(data.craft_image_url, DEFAULT_SETTINGS.craft_image_url),
+    privacy_policy: data.privacy_policy || DEFAULT_SETTINGS.privacy_policy,
+    refund_policy: data.refund_policy || DEFAULT_SETTINGS.refund_policy,
+    terms_conditions: data.terms_conditions || DEFAULT_SETTINGS.terms_conditions,
+    shipping_policy: data.shipping_policy || DEFAULT_SETTINGS.shipping_policy,
   };
   MEM_CACHE.set('settings:general', { data: result, timestamp: Date.now() });
   return result;

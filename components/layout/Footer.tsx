@@ -126,9 +126,9 @@ export default function Footer() {
             <h4>Customer Care</h4>
             <div className="footer-link-list">
               <Link href="/contact">Track Order</Link>
-              <Link href="/about">Shipping Policy</Link>
-              <Link href="/about">Return &amp; Exchange</Link>
-              <Link href="/about">FAQs</Link>
+              <Link href="/shipping-policy">Shipping Policy</Link>
+              <Link href="/refund-policy">Return &amp; Exchange</Link>
+              <Link href="/contact">FAQs &amp; Help</Link>
               <Link href="/contact">Contact Us</Link>
             </div>
           </div>
@@ -137,9 +137,10 @@ export default function Footer() {
           <div className="footer-column-item">
             <h4>Legal</h4>
             <div className="footer-link-list">
-              <Link href="/about">Terms &amp; Conditions</Link>
-              <Link href="/about">Privacy Policy</Link>
-              <Link href="/about">Refund Policy</Link>
+              <Link href="/terms">Terms &amp; Conditions</Link>
+              <Link href="/privacy-policy">Privacy Policy</Link>
+              <Link href="/refund-policy">Refund Policy</Link>
+              <Link href="/shipping-policy">Shipping Policy</Link>
               <Link href="/admin/login" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', opacity: 0.7 }}>
                 <Lock size={11} /> Admin Portal
               </Link>
